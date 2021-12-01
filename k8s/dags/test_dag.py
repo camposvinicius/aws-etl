@@ -77,7 +77,6 @@ with DAG(
     terminate_emr_cluster = EmrTerminateJobFlowOperator(
         task_id="terminate_emr_cluster",
         job_flow_id="{{ task_instance.xcom_pull(task_ids='create_emr_cluster', key='return_value') }}",
-        region_name=REGION,
         aws_conn_id="aws"
     )
 
@@ -91,8 +90,8 @@ with DAG(
         create_buckets = S3CreateBucketOperator(
             task_id=f'create_bucket_{bucket}'+f'-{AWS_PROJECT}',
             bucket_name=bucket+f'-{AWS_PROJECT}',
-            aws_conn_id='aws',
-            region_name=REGION
+            region_name=REGION,
+            aws_conn_id='aws'
         )
 
         create_buckets >> create_emr_cluster >> terminate_emr_cluster
