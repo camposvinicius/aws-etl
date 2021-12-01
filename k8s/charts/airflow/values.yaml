@@ -207,7 +207,7 @@ airflow:
   ##     - "SomeProject==1.0.0"
   ##
   extraPipPackages: 
-    - "apache-airflow-providers-google>=6.1.0"
+    - "apache-airflow-providers-amazon>=2.4.0"
 
   ## extra environment variables for the airflow Pods
   ## - spec for EnvVar:
@@ -316,7 +316,7 @@ airflow:
     ##     - "SomeProject==1.0.0"
     ##
     extraPipPackages:
-      - "apache-airflow-providers-google>=6.1.0"
+      - "apache-airflow-providers-amazon>=2.4.0"
 
     ## extra VolumeMounts for the Pod template
     ## - spec for VolumeMount:
@@ -544,7 +544,7 @@ scheduler:
   ##     - "SomeProject==1.0.0"
   ##
   extraPipPackages: 
-    - "apache-airflow-providers-google>=6.1.0"
+    - "apache-airflow-providers-amazon>=2.4.0"
 
   ## extra VolumeMounts for the scheduler Pods
   ## - spec of VolumeMount:
@@ -702,7 +702,7 @@ web:
   ##     - "SomeProject==1.0.0"
   ##
   extraPipPackages: 
-    - "apache-airflow-providers-google>=6.1.0"
+    - "apache-airflow-providers-amazon>=2.4.0"
 
   ## extra VolumeMounts for the web Pods
   ## - spec for VolumeMount:
@@ -848,7 +848,7 @@ workers:
   ##     - "SomeProject==1.0.0"
   ##
   extraPipPackages: 
-    - "apache-airflow-providers-google>=6.1.0"
+    - "apache-airflow-providers-amazon>=2.4.0"
 
   ## extra VolumeMounts for the worker Pods
   ## - spec for VolumeMount:
@@ -985,7 +985,7 @@ flower:
   ##     - "SomeProject==1.0.0"
   ##
   extraPipPackages: 
-    - "apache-airflow-providers-google>=6.1.0"
+    - "apache-airflow-providers-amazon>=2.4.0"
 
   ## extra VolumeMounts for the flower Pods
   ## - spec for VolumeMount:
