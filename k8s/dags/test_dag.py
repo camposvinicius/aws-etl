@@ -28,20 +28,6 @@ with DAG(
     catchup=False
 ) as dag:
 
-    buckets = [
-        'landing-zone',
-        'processing-zone',
-        'curated-zone'
-    ]
-
-    for bucket in buckets:
-        create_buckets = S3CreateBucketOperator(
-            task_id=f'create_bucket_{bucket}',
-            bucket_name=bucket,
-            aws_conn_id='aws',
-            region_name=REGION
-        )
-
     JOB_FLOW_OVERRIDES = {
         'Name': 'ETL-VINI-AWS',
         "ReleaseLabel": "emr-6.5.0",
@@ -92,4 +78,18 @@ with DAG(
         aws_conn_id="aws"
     )
 
-    create_buckets >> create_emr_cluster >> terminate_emr_cluster
+    buckets = [
+        'landing-zone',
+        'processing-zone',
+        'curated-zone'
+    ]
+
+    for bucket in buckets:
+        create_buckets = S3CreateBucketOperator(
+            task_id=f'create_bucket_{bucket}',
+            bucket_name=bucket,
+            aws_conn_id='aws',
+            region_name=REGION
+        )
+
+        create_buckets >> create_emr_cluster >> terminate_emr_cluster
