@@ -36,7 +36,7 @@ with DAG(
 
     for bucket in buckets:
         create_buckets = S3CreateBucketOperator(
-            task_id=f'create_bucket_{bucket}'
+            task_id=f'create_bucket_{bucket}',
             bucket_name=bucket,
             aws_conn_id='aws',
             region_name=REGION
