@@ -77,11 +77,10 @@ with DAG(
     )
 
     emr_create_sensor = EmrJobFlowSensor(
-        task_id='poking_cluster_creation',
+        task_id='monitoring_emr_cluster_creation',
         job_flow_id="{{ task_instance.xcom_pull(task_ids='create_emr_cluster', key='return_value') }}",
         target_states=['WAITING'],
-        failed_states=['TERMINATED', 'TERMINATED_WITH_ERRORS'],
-        region_name=REGION
+        failed_states=['TERMINATED', 'TERMINATED_WITH_ERRORS']
     )
 
     terminate_emr_cluster = EmrTerminateJobFlowOperator(
