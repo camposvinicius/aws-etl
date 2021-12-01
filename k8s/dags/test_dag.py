@@ -58,7 +58,40 @@ with DAG(
                     "InstanceRole": "TASK",
                     "InstanceType": "m5.xlarge",
                     "InstanceCount": 2,
-                }            
+                    "AutoScalingPolicy": {
+                        "Constraints": {
+                                "MaxCapacity": 10,
+                                "MinCapacity": 2
+                        },
+                        "Rules": [{
+                                "Action": {
+                                        "SimpleScalingPolicyConfiguration": {
+                                                "AdjustmentType": "CHANGE_IN_CAPACITY",
+                                                "CoolDown": 300,
+                                                "ScalingAdjustment": 1
+                                        }
+                                },
+                                "Description": "Replicates the default scale-out rule in the console for YARN memory",
+                                "Name": "Default-scale-out",
+                                "Trigger": {
+                                        "CloudWatchAlarmDefinition": {
+                                                "ComparisonOperator": "LESS_THAN",
+                                                "Dimensions": [{
+                                                        "Key": "JobFlowID",
+                                                        "Value": "${emr.clusterID}"
+                                                }],
+                                                "EvaluationPeriods": 1,
+                                                "MetricName": "YARNMemoryAvailablePercentage",
+                                                "Namespace": "AWS/ElasticMapReduce",
+                                                "Period": 300,
+                                                "Statistic": "AVERAGE",
+                                                "Threshold": 15,
+                                                "Unit": "PERCENT"
+                                        }
+                                }
+                        }]
+                    }
+                }           
             ],
             'KeepJobFlowAliveWhenNoSteps': True,
             'TerminationProtected': False,
@@ -87,7 +120,6 @@ with DAG(
     terminate_emr_cluster = EmrTerminateJobFlowOperator(
         task_id="terminate_emr_cluster",
         job_flow_id="{{ task_instance.xcom_pull(task_ids='create_emr_cluster', key='return_value') }}",
-
         aws_conn_id="aws"
     )
 
