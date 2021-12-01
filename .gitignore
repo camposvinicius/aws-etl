@@ -1,4 +1,4 @@
 aws-key.txt
 *.terraform
 *.terraform.*
-k8s/terraform-resources/kubeconfig_eks-cluster-vini-campos-etl-aws
+k8s/resources/kubeconfig_eks-cluster-vini-campos-etl-aws
