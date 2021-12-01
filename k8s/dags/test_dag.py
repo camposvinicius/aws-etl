@@ -70,6 +70,7 @@ with DAG(
         job_flow_overrides=JOB_FLOW_OVERRIDES,
         aws_conn_id="aws",
         emr_conn_id="emr",
+        region=REGION,
         dag=dag,
     )
 
