@@ -80,7 +80,8 @@ with DAG(
         task_id='monitoring_emr_cluster_creation',
         job_flow_id="{{ task_instance.xcom_pull(task_ids='create_emr_cluster', key='return_value') }}",
         target_states=['WAITING'],
-        failed_states=['TERMINATED', 'TERMINATED_WITH_ERRORS']
+        failed_states=['TERMINATED', 'TERMINATED_WITH_ERRORS'],
+        aws_conn_id="aws"
     )
 
     terminate_emr_cluster = EmrTerminateJobFlowOperator(
