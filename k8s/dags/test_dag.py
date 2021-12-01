@@ -60,7 +60,7 @@ with DAG(
                     "InstanceCount": 2,
                 }            
             ],
-            'KeepJobFlowAliveWhenNoSteps': False,
+            'KeepJobFlowAliveWhenNoSteps': True,
             'TerminationProtected': False,
         },
         'JobFlowRole': 'EMR_EC2_DefaultRole',
@@ -87,6 +87,7 @@ with DAG(
     terminate_emr_cluster = EmrTerminateJobFlowOperator(
         task_id="terminate_emr_cluster",
         job_flow_id="{{ task_instance.xcom_pull(task_ids='create_emr_cluster', key='return_value') }}",
+
         aws_conn_id="aws"
     )
 
