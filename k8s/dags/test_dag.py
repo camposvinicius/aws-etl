@@ -9,6 +9,7 @@ from airflow.providers.amazon.aws.operators.s3_bucket import (
 from airflow.contrib.operators.emr_create_job_flow_operator import EmrCreateJobFlowOperator
 from airflow.contrib.operators.emr_terminate_job_flow_operator import EmrTerminateJobFlowOperator
 
+AWS_PROJECT = getenv("AWS_PROJECT", "vini-etl-aws")
 REGION = getenv("REGION", "us-east-1")
 
 default_args = {
@@ -87,7 +88,7 @@ with DAG(
     for bucket in buckets:
         create_buckets = S3CreateBucketOperator(
             task_id=f'create_bucket_{bucket}',
-            bucket_name=bucket,
+            bucket_name=bucket+f'_{AWS_PROJECT}',
             aws_conn_id='aws',
             region_name=REGION
         )
