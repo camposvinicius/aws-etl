@@ -24,5 +24,3 @@ with tempfile.TemporaryDirectory() as temp_path:
             z.open(filename),
             Bucket=bucket,
             Key='data/' + f'{filename}')
-
-

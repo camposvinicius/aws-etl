@@ -58,40 +58,47 @@ with DAG(
                     "InstanceRole": "TASK",
                     "InstanceType": "m5.xlarge",
                     "InstanceCount": 2,
-                    "AutoScalingPolicy": {
-                        "Constraints": {
-                                "MaxCapacity": 10,
-                                "MinCapacity": 2
+                    "AutoScalingPolicy":
+                        {
+                            "Constraints":
+                        {
+                            "MinCapacity": 2,
+                            "MaxCapacity": 10
                         },
-                        "Rules": [{
-                                "Action": {
-                                        "SimpleScalingPolicyConfiguration": {
-                                                "AdjustmentType": "CHANGE_IN_CAPACITY",
-                                                "CoolDown": 300,
-                                                "ScalingAdjustment": 1
-                                        }
-                                },
-                                "Description": "Replicates the default scale-out rule in the console for YARN memory",
-                                "Name": "Default-scale-out",
-                                "Trigger": {
-                                        "CloudWatchAlarmDefinition": {
-                                                "ComparisonOperator": "LESS_THAN",
-                                                "Dimensions": [{
-                                                        "Key": "JobFlowID",
-                                                        "Value": "${emr.clusterID}"
-                                                }],
-                                                "EvaluationPeriods": 1,
-                                                "MetricName": "YARNMemoryAvailablePercentage",
-                                                "Namespace": "AWS/ElasticMapReduce",
-                                                "Period": 300,
-                                                "Statistic": "AVERAGE",
-                                                "Threshold": 15,
-                                                "Unit": "PERCENT"
-                                        }
+                        "Rules":
+                            [
+                        {
+                        "Name": "Default-scale-out",
+                        "Description": "Replicates the default scale-out rule in the console for YARN memory.",
+                        "Action":{
+                            "SimpleScalingPolicyConfiguration":{
+                            "AdjustmentType": "CHANGE_IN_CAPACITY",
+                            "ScalingAdjustment": 1,
+                            "CoolDown": 300
+                            }
+                        },
+                        "Trigger":{
+                            "CloudWatchAlarmDefinition":{
+                            "ComparisonOperator": "LESS_THAN",
+                            "EvaluationPeriods": 1,
+                            "MetricName": "YARNMemoryAvailablePercentage",
+                            "Namespace": "AWS/ElasticMapReduce",
+                            "Period": 300,
+                            "Threshold": 15,
+                            "Statistic": "AVERAGE",
+                            "Unit": "PERCENT",
+                            "Dimensions":[
+                                {
+                                "Key" : "JobFlowId",
+                                "Value" : "${emr.clusterId}"
                                 }
-                        }]
+                            ]
+                            }
+                        }
+                        }
+                        ]
                     }
-                }           
+                }
             ],
             'KeepJobFlowAliveWhenNoSteps': True,
             'TerminationProtected': False,
