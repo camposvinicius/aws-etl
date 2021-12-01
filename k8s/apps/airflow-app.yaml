@@ -8,7 +8,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/camposvinicius/teste-zero.git
+    repoURL: https://github.com/camposvinicius/aws-etl.git
     targetRevision: main
     path: k8s/charts/airflow
   destination:

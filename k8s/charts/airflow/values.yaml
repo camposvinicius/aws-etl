@@ -1107,7 +1107,7 @@ dags:
     ##   # ssh git repo
     ##   repo: "git@github.com:USERNAME/REPOSITORY.git"
     ##
-    repo: "https://github.com/camposvinicius/teste-zero.git"
+    repo: "https://github.com/camposvinicius/aws-etl.git"
 
     ## the sub-path within your repo where dags are located
     ## - only dags under this path within your repo will be seen by airflow,
