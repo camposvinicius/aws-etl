@@ -86,13 +86,7 @@ with DAG(
                             "Period": 300,
                             "Threshold": 15,
                             "Statistic": "AVERAGE",
-                            "Unit": "PERCENT",
-                            "Dimensions":[
-                                {
-                                "Key" : "JobFlowId",
-                                "Value" : "${emr.clusterId}"
-                                }
-                            ]
+                            "Unit": "PERCENT"
                             }
                         }
                         }
