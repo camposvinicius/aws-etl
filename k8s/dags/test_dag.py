@@ -8,6 +8,8 @@ from airflow.providers.amazon.aws.operators.s3_bucket import (
 )
 from airflow.contrib.operators.emr_create_job_flow_operator import EmrCreateJobFlowOperator
 from airflow.contrib.operators.emr_terminate_job_flow_operator import EmrTerminateJobFlowOperator
+from airflow.providers.amazon.aws.sensors.emr_job_flow import EmrJobFlowSensor
+
 
 AWS_PROJECT = getenv("AWS_PROJECT", "vini-etl-aws")
 REGION = getenv("REGION", "us-east-1")
@@ -74,11 +76,19 @@ with DAG(
         dag=dag,
     )
 
+    emr_create_sensor = EmrJobFlowSensor(
+        task_id='poking_cluster_creation',
+        job_flow_id="{{ task_instance.xcom_pull(task_ids='create_emr_cluster', key='return_value') }}",
+        target_states=['WAITING'],
+        failed_states=['TERMINATED', 'TERMINATED_WITH_ERRORS']
+    )
+
     terminate_emr_cluster = EmrTerminateJobFlowOperator(
         task_id="terminate_emr_cluster",
         job_flow_id="{{ task_instance.xcom_pull(task_ids='create_emr_cluster', key='return_value') }}",
         aws_conn_id="aws"
     )
+
 
     buckets = [
         'landing-zone',
@@ -94,4 +104,4 @@ with DAG(
             aws_conn_id='aws'
         )
 
-        create_buckets >> create_emr_cluster >> terminate_emr_cluster
+        create_buckets >> create_emr_cluster >> emr_create_sensor >> terminate_emr_cluster
