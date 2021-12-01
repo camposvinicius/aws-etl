@@ -1137,7 +1137,7 @@ dags:
 
     ## the name of a pre-created Secret with git http credentials
     ##
-    httpSecret: airflow-http-git-secret
+    httpSecret: ""
 
     ## the key in `dags.gitSync.httpSecret` with your git username
     ##
