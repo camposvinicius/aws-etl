@@ -8,7 +8,9 @@ resource "aws_iam_role" "iam_for_lambda" {
     {
       "Action": "sts:AssumeRole",
       "Principal": {
-        "Service": "lambda.amazonaws.com"
+        "Service": [
+          "lambda.amazonaws.com"
+        ]
       },
       "Effect": "Allow",
       "Sid": ""
@@ -16,6 +18,29 @@ resource "aws_iam_role" "iam_for_lambda" {
   ]
 }
 EOF
+}
+
+resource "aws_iam_policy" "policy" {
+  name = "iam_for_lambda_policy"
+
+  policy = <<-EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Sid": "Stmt1590217939128",
+        "Action": "s3:*",
+        "Effect": "Allow",
+        "Resource": "*"
+      }
+    ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy_attachment" "policy-attach" {
+  role       = "${aws_iam_role.iam_for_lambda.name}"
+  policy_arn = "${aws_iam_policy.policy.arn}"
 }
 
 #resource "aws_lambda_function" "test_lambda" {
