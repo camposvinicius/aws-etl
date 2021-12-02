@@ -124,7 +124,6 @@ with DAG(
         aws_conn_id="aws"
     )
 
-
     buckets = [
         'landing-zone',
         'processing-zone',
