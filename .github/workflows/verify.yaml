@@ -38,7 +38,7 @@ jobs:
       env:
         COMMAND_IAC: terraform
       run: |
-        cd resources
+        cd k8s/resources
         $COMMAND_IAC init
         $COMMAND_IAC validate
         $COMMAND_IAC plan
