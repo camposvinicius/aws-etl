@@ -19,7 +19,7 @@ jobs:
       run: |
         cd  k8s/lambda-function
         python -m pip install --upgrade pip 
-        pip install -r k8s/lambda-function/requirements.txt
+        pip install -r requirements.txt
     
     - uses: montudor/action-zip@v1
       with:
