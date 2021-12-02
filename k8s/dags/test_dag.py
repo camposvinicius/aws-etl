@@ -97,7 +97,8 @@ with DAG(
         },
         'VisibleToAllUsers': True,
         'JobFlowRole': 'EMR_EC2_DefaultRole',
-        'ServiceRole': ' EMR_AutoScaling_DefaultRole'
+        'ServiceRole': 'EMR_DefaultRole',
+        'AutoScalingRole': ' EMR_AutoScaling_DefaultRole'
     }
 
     create_emr_cluster = EmrCreateJobFlowOperator(
