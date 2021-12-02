@@ -63,30 +63,28 @@ with DAG(
                             "Constraints":
                         {
                             "MinCapacity": 2,
-                            "MaxCapacity": 10
+                            "MaxCapacity": 4
                         },
                         "Rules":
                             [
                         {
-                        "Name": "Default-scale-out",
-                        "Description": "Replicates the default scale-out rule in the console for YARN memory.",
+                        "Name": "Scale Up",
                         "Action":{
                             "SimpleScalingPolicyConfiguration":{
                             "AdjustmentType": "CHANGE_IN_CAPACITY",
                             "ScalingAdjustment": 1,
-                            "CoolDown": 300
+                            "CoolDown": 120
                             }
                         },
                         "Trigger":{
                             "CloudWatchAlarmDefinition":{
-                            "ComparisonOperator": "LESS_THAN",
+                            "ComparisonOperator": "GREATER_THAN_OR_EQUAL",
                             "EvaluationPeriods": 1,
-                            "MetricName": "YARNMemoryAvailablePercentage",
-                            "Namespace": "AWS/ElasticMapReduce",
+                            "MetricName": "Scale Up",
                             "Period": 300,
                             "Threshold": 15,
                             "Statistic": "AVERAGE",
-                            "Unit": "PERCENT"
+                            "Threshold": 75
                             }
                         }
                         }
@@ -97,6 +95,7 @@ with DAG(
             'KeepJobFlowAliveWhenNoSteps': True,
             'TerminationProtected': False,
         },
+        'VisibleToAllUsers': True,
         'JobFlowRole': 'EMR_EC2_DefaultRole',
         'ServiceRole': 'EMR_DefaultRole',
     }
