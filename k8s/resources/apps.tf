@@ -6,7 +6,8 @@ resource "kubectl_manifest" "namespace" {
   yaml_body          = element(data.kubectl_file_documents.namespace.documents, count.index)
   override_namespace = "argocd"
   depends_on = [
-    data.kubectl_file_documents.namespace
+    data.kubectl_file_documents.namespace,
+    module.eks
   ]
 }
 
@@ -20,7 +21,8 @@ resource "kubectl_manifest" "argocd" {
   override_namespace = "argocd"
   depends_on = [
     kubectl_manifest.namespace,
-    data.kubectl_file_documents.argocd
+    data.kubectl_file_documents.argocd,
+    module.eks
   ]
 }
 
@@ -34,6 +36,7 @@ resource "kubectl_manifest" "airflow" {
   override_namespace = "argocd"
   depends_on = [
     kubectl_manifest.argocd,
-    data.kubectl_file_documents.airflow
+    data.kubectl_file_documents.airflow,
+    module.eks
   ]
 }
