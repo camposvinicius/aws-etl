@@ -95,6 +95,7 @@ with DAG(
             'KeepJobFlowAliveWhenNoSteps': True,
             'TerminationProtected': False,
         },
+        'VisibleToAllUsers': True,
         'JobFlowRole': 'EMR_EC2_DefaultRole',
         'ServiceRole': 'EMR_DefaultRole',
     }
