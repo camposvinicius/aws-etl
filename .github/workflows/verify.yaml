@@ -1,4 +1,4 @@
-name: 'Python Dependencies'
+name: 'Lambda Function and Your Dependencies'
 
 on:
   push:
@@ -16,8 +16,8 @@ jobs:
       with:
         python-version: 3.9
     - name: Install dependencies and Zip Folder
+      working-directory: lambda-function
       run: |
-        cd  k8s/lambda-function
         python -m pip install --upgrade pip 
         pip install -r requirements.txt --target .
         zip -r lambda_function.zip .
