@@ -44,8 +44,8 @@ resource "aws_iam_role_policy_attachment" "policy-attach" {
 }
 
 resource "aws_lambda_function" "lambda_function" {
-  filename      = "lambda_function.zip"
   function_name = "myfunction"
+  filename      = "lambda_function.zip"
   role          = aws_iam_role.iam_for_lambda.arn
   handler       = "lambda_function.lambda_handler"
   memory_size   = 256
