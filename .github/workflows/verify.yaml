@@ -15,12 +15,9 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: 3.9
-    - name: Install dependencies
+    - name: Install dependencies and Zip Folder
       run: |
         cd  k8s/lambda-function
         python -m pip install --upgrade pip 
         pip install -r requirements.txt --target .
-    
-    - uses: montudor/action-zip@v1
-      with:
-        args: zip -qq -r lambda-function.zip k8s/lambda-function
+        zip -r lambda_function.zip
