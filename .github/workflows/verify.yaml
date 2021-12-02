@@ -22,4 +22,4 @@ jobs:
     
     - uses: montudor/action-zip@v1
       with:
-        args: zip -qq -r lambda-function.zip lambda-function
+        args: zip -qq -r lambda-function.zip . -i k8s/lambda-function
