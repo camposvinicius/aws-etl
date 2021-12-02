@@ -21,6 +21,5 @@ jobs:
         pip install -r k8s/lambda-function/requirements.txt --target k8s/lambda-function
     
     - uses: montudor/action-zip@v1
-    - name: Zipping the file
       with:
         args: zip -qq -r lambda-function.zip lambda-function
