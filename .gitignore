@@ -5,3 +5,4 @@ k8s/resources/kubeconfig_eks-cluster-vini-campos-etl-aws
 aws_key.json
 connect.txt
 key-emr.txt
+__pycache__
