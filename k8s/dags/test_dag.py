@@ -126,7 +126,6 @@ with DAG(
     )
 
     trigger_lambda = AwsLambdaHook(
-        task_id="trigger_lambda",
         function_name='myfunction',
         region_name=REGION,
         log_type='None',
