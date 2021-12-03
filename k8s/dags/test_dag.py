@@ -9,6 +9,7 @@ from airflow.providers.amazon.aws.operators.s3_bucket import (
 from airflow.contrib.operators.emr_create_job_flow_operator import EmrCreateJobFlowOperator
 from airflow.contrib.operators.emr_terminate_job_flow_operator import EmrTerminateJobFlowOperator
 from airflow.providers.amazon.aws.sensors.emr_job_flow import EmrJobFlowSensor
+from airflow.contrib.hooks.aws_lambda_hook import AwsLambdaHook
 
 
 AWS_PROJECT = getenv("AWS_PROJECT", "vini-etl-aws")
@@ -119,8 +120,18 @@ with DAG(
     )
 
     terminate_emr_cluster = EmrTerminateJobFlowOperator(
-        task_id="terminate_emr_cluster",
+        task_id='terminate_emr_cluster',
         job_flow_id="{{ task_instance.xcom_pull(task_ids='create_emr_cluster', key='return_value') }}",
+        aws_conn_id="aws"
+    )
+
+    trigger_lambda = AwsLambdaHook(
+        task_id="trigger_lambda",
+        function_name='myfunction',
+        region_name=REGION,
+        log_type='None',
+        qualifier='$LATEST',
+        invocation_type='Event',
         aws_conn_id="aws"
     )
 
@@ -138,4 +149,4 @@ with DAG(
             aws_conn_id='aws'
         )
 
-        create_buckets >> create_emr_cluster >> emr_create_sensor >> terminate_emr_cluster
+        create_buckets >> trigger_lambda >> create_emr_cluster >> emr_create_sensor >> terminate_emr_cluster
