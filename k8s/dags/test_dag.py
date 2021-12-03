@@ -1,7 +1,11 @@
+import boto3
+
 from os import getenv
 
 from airflow import DAG
+from airflow.models import Variable
 from airflow.utils.dates import days_ago
+from airflow.operators.python import PythonOperator
 from airflow.providers.amazon.aws.operators.s3_bucket import (
     S3CreateBucketOperator, 
     S3DeleteBucketOperator
@@ -10,7 +14,6 @@ from airflow.contrib.operators.emr_create_job_flow_operator import EmrCreateJobF
 from airflow.contrib.operators.emr_terminate_job_flow_operator import EmrTerminateJobFlowOperator
 from airflow.providers.amazon.aws.sensors.emr_job_flow import EmrJobFlowSensor
 from airflow.providers.amazon.aws.hooks.lambda_function import AwsLambdaHook
-
 
 AWS_PROJECT = getenv("AWS_PROJECT", "vini-etl-aws")
 REGION = getenv("REGION", "us-east-1")
@@ -125,13 +128,26 @@ with DAG(
         aws_conn_id="aws"
     )
 
-    trigger_lambda = AwsLambdaHook(
-        function_name='myfunction',
-        log_type='None',
-        qualifier='$LATEST',
-        region_name=REGION,
-        invocation_type='Event',
-        aws_conn_id="aws"
+    def trigger_lambda():
+        lambda_client = boto3.client(
+            'lambda',
+            aws_access_key_id=Variable.get("AWS_ACCESS_KEY_ID"),
+            aws_secret_access_key=Variable.get("AWS_SECRET_ACCESS_KEY"),
+            region=REGION
+        )
+
+        response = lambda_client.invoke(
+            FunctionName='myfunction',
+            InvocationType='Event',
+            LogType='None',
+            Qualifier='$LATEST'
+        )
+
+        return response
+    
+    task_lambda = PythonOperator(
+        task_id='trigger_lambda',
+        python_callable=trigger_lambda
     )
 
     buckets = [
@@ -148,4 +164,4 @@ with DAG(
             aws_conn_id='aws'
         )
 
-        create_buckets >> trigger_lambda >> create_emr_cluster >> emr_create_sensor >> terminate_emr_cluster
+        create_buckets >> task_lambda >> create_emr_cluster >> emr_create_sensor >> terminate_emr_cluster
