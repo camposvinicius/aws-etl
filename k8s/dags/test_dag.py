@@ -225,6 +225,8 @@ with DAG(
             aws_conn_id='aws'
         )
 
+        (
         create_buckets >> task_lambda >> create_emr_cluster >> 
         
         emr_create_sensor >> task_csv_to_parquet >> terminate_emr_cluster
+        )
