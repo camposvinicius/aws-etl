@@ -9,7 +9,7 @@ from airflow.providers.amazon.aws.operators.s3_bucket import (
 from airflow.contrib.operators.emr_create_job_flow_operator import EmrCreateJobFlowOperator
 from airflow.contrib.operators.emr_terminate_job_flow_operator import EmrTerminateJobFlowOperator
 from airflow.providers.amazon.aws.sensors.emr_job_flow import EmrJobFlowSensor
-from airflow.contrib.hooks.aws_lambda_hook import AwsLambdaHook
+from airflow.providers.amazon.aws.hooks.lambda_function import AwsLambdaHook
 
 
 AWS_PROJECT = getenv("AWS_PROJECT", "vini-etl-aws")
@@ -127,9 +127,9 @@ with DAG(
 
     trigger_lambda = AwsLambdaHook(
         function_name='myfunction',
-        region_name=REGION,
         log_type='None',
         qualifier='$LATEST',
+        region_name=REGION,
         invocation_type='Event',
         aws_conn_id="aws"
     )
