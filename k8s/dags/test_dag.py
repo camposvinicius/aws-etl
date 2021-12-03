@@ -1,4 +1,5 @@
 import boto3
+import json
 
 from os import getenv
 
@@ -13,10 +14,34 @@ from airflow.providers.amazon.aws.operators.s3_bucket import (
 from airflow.contrib.operators.emr_create_job_flow_operator import EmrCreateJobFlowOperator
 from airflow.contrib.operators.emr_terminate_job_flow_operator import EmrTerminateJobFlowOperator
 from airflow.providers.amazon.aws.sensors.emr_job_flow import EmrJobFlowSensor
-from airflow.providers.amazon.aws.hooks.lambda_function import AwsLambdaHook
+from airflow.contrib.operators.emr_add_steps_operator import EmrAddStepsOperator
 
 AWS_PROJECT = getenv("AWS_PROJECT", "vini-etl-aws")
 REGION = getenv("REGION", "us-east-1")
+
+CODE_PATH = 's3://emr-code-zone-vini-etl-aws'
+
+SPARK_ARGUMENTS = [
+    'spark-submit',
+    '--deploy-mode', 'cluster',
+    '--conf', 'spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version=2',
+    '--conf', 'spark.sql.join.preferSortMergeJoin=true',
+    '--conf', 'spark.speculation=false',
+    '--conf', 'spark.sql.adaptive.enabled=true',
+    '--conf', 'spark.sql.adaptive.coalescePartitions.enabled=true',
+    '--conf', 'spark.sql.adaptive.coalescePartitions.minPartitionNum=1',
+    '--conf', 'spark.sql.adaptive.coalescePartitions.initialPartitionNum=10',
+    '--conf', 'spark.sql.adaptive.advisoryPartitionSizeInBytes=134217728',
+    '--conf', 'spark.serializer=org.apache.spark.serializer.KryoSerializer',
+    '--conf', 'spark.dynamicAllocation.minExecutors=5',
+    '--conf', 'spark.dynamicAllocation.maxExecutors=30',
+    '--conf', 'spark.dynamicAllocation.initialExecutors=10'
+]
+
+CSV_TO_PARQUET_ARGS = [
+    '--py-files', f'{CODE_PATH}/variables.py'
+    f'{CODE_PATH}/csv-to-parquet.py'
+]
 
 default_args = {
     'owner': 'Vini Campos',
@@ -148,6 +173,44 @@ with DAG(
         python_callable=trigger_lambda
     )
 
+    def add_spark_step(dag, aux_args, job_id, params=None):
+
+        args = SPARK_ARGUMENTS.copy()
+        args.extend(aux_args)
+
+        if params:
+            args.append(json.dumps(params))
+
+        step = {
+            'name': f'vini_etl_aws_{job_id}',
+            'args': args
+        }
+
+        task = EmrAddStepsOperator(
+            task_id=f'csv_to_parquet_{job_id}',
+            job_flow_id="{{ task_instance.xcom_pull(task_ids='create_emr_cluster', key='return_value') }}",
+            step=step,
+            dag=dag
+        )
+
+        return task
+    
+    csv_files = [
+        'topics',
+        'titles',
+        'records',
+        'names',
+        'classification'
+    ]
+
+    for file in csv_files:
+        task_csv_to_parquet = add_spark_step(
+            dag,
+            CSV_TO_PARQUET_ARGS,
+            f'{file}',
+            params={'file': file, 'format_source': 'csv', 'format_target': 'parquet'}
+        )
+
     buckets = [
         'landing-zone',
         'processing-zone',
@@ -162,4 +225,6 @@ with DAG(
             aws_conn_id='aws'
         )
 
-        create_buckets >> task_lambda >> create_emr_cluster >> emr_create_sensor >> terminate_emr_cluster
+        create_buckets >> task_lambda >> create_emr_cluster >> 
+        
+        emr_create_sensor >> task_csv_to_parquet >> terminate_emr_cluster
