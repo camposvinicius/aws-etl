@@ -142,8 +142,6 @@ with DAG(
             LogType='None',
             Qualifier='$LATEST'
         )
-
-        return response
     
     task_lambda = PythonOperator(
         task_id='trigger_lambda',
