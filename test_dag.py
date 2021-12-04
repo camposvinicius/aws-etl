@@ -16,14 +16,77 @@ from airflow.contrib.operators.emr_terminate_job_flow_operator import EmrTermina
 from airflow.providers.amazon.aws.sensors.emr_job_flow import EmrJobFlowSensor
 from airflow.contrib.operators.emr_add_steps_operator import EmrAddStepsOperator
 
-################################### VARIABLES ##########################################################
+###################################### VARIABLES ######################################
 
 AWS_PROJECT = getenv("AWS_PROJECT", "vini-etl-aws")
 REGION = getenv("REGION", "us-east-1")
 
 CODE_PATH = 's3://emr-code-zone-vini-etl-aws'
 
-################################### SPARK_CLUSTER_CONFIG ################################################
+###################################### SPARK STEPS ######################################
+
+SPARK_STEPS = [
+    {
+        "Name": "Convert All CSVs to Parquets",
+        "ActionOnFailure": "CANCEL_AND_WAIT",
+        "HadoopJarStep": {
+            "Jar": "command-runner.jar",
+            "Args": [
+                'spark-submit',
+                '--deploy-mode', 'cluster',
+                '--conf', 'spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version=2',
+                '--conf', 'spark.sql.join.preferSortMergeJoin=true',
+                '--conf', 'spark.speculation=false',
+                '--conf', 'spark.sql.adaptive.enabled=true',
+                '--conf', 'spark.sql.adaptive.coalescePartitions.enabled=true',
+                '--conf', 'spark.sql.adaptive.coalescePartitions.minPartitionNum=1',
+                '--conf', 'spark.sql.adaptive.coalescePartitions.initialPartitionNum=10',
+                '--conf', 'spark.sql.adaptive.advisoryPartitionSizeInBytes=134217728',
+                '--conf', 'spark.serializer=org.apache.spark.serializer.KryoSerializer',
+                '--conf', 'spark.dynamicAllocation.minExecutors=5',
+                '--conf', 'spark.dynamicAllocation.maxExecutors=30',
+                '--conf', 'spark.dynamicAllocation.initialExecutors=10',
+                '--py-files', f'{CODE_PATH}/variables.py',
+                f'{CODE_PATH}/csv-to-parquet.py'
+            ],
+        },
+    }
+]
+
+###################################### FUNCTIONS ######################################
+
+def trigger_lambda():
+    lambda_client = boto3.client(
+        'lambda',
+        aws_access_key_id=Variable.get("AWS_ACCESS_KEY_ID"),
+        aws_secret_access_key=Variable.get("AWS_SECRET_ACCESS_KEY"),
+        region_name=REGION
+    )
+
+    response = lambda_client.invoke(
+        FunctionName='myfunction',
+        InvocationType='Event',
+        LogType='None',
+        Qualifier='$LATEST'
+    )
+
+###################################### LISTS ######################################
+
+csv_files = [
+    'topics',
+    'titles',
+    'records',
+    'names',
+    'classification'
+]
+
+buckets = [
+    'landing-zone',
+    'processing-zone',
+    'curated-zone'
+]
+
+###################################### SPARK-CLUSTER-CONFIG ######################################
 
 JOB_FLOW_OVERRIDES = {
     'Name': 'ETL-VINI-AWS',
@@ -43,7 +106,7 @@ JOB_FLOW_OVERRIDES = {
                 "Market": "ON_DEMAND",
                 "InstanceRole": "CORE",
                 "InstanceType": "m5.xlarge",
-                "InstanceCount": 2,
+                "InstanceCount": 1,
             },
             {
                 "Name": "TASK_NODES",
@@ -95,105 +158,7 @@ JOB_FLOW_OVERRIDES = {
     'AutoScalingRole': 'EMR_AutoScaling_DefaultRole'
 }
 
-################################### SPARK_ARGUMENTS #####################################################
-
-SPARK_ARGUMENTS = [
-    'spark-submit',
-    '--deploy-mode', 'cluster',
-    '--conf', 'spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version=2',
-    '--conf', 'spark.sql.join.preferSortMergeJoin=true',
-    '--conf', 'spark.speculation=false',
-    '--conf', 'spark.sql.adaptive.enabled=true',
-    '--conf', 'spark.sql.adaptive.coalescePartitions.enabled=true',
-    '--conf', 'spark.sql.adaptive.coalescePartitions.minPartitionNum=1',
-    '--conf', 'spark.sql.adaptive.coalescePartitions.initialPartitionNum=10',
-    '--conf', 'spark.sql.adaptive.advisoryPartitionSizeInBytes=134217728',
-    '--conf', 'spark.serializer=org.apache.spark.serializer.KryoSerializer',
-    '--conf', 'spark.dynamicAllocation.minExecutors=5',
-    '--conf', 'spark.dynamicAllocation.maxExecutors=30',
-    '--conf', 'spark.dynamicAllocation.initialExecutors=10'
-]
-
-CSV_TO_PARQUET_ARGS = [
-    '--py-files', f'{CODE_PATH}/variables.py',
-    f'{CODE_PATH}/csv-to-parquet.py'
-]
-
-################################### FUNCTIONS #####################################################
-
-def trigger_lambda():
-
-    lambda_client = boto3.client(
-        'lambda',
-        aws_access_key_id=Variable.get("AWS_ACCESS_KEY_ID"),
-        aws_secret_access_key=Variable.get("AWS_SECRET_ACCESS_KEY"),
-        region_name=REGION
-    )
-
-    response = lambda_client.invoke(
-        FunctionName='myfunction',
-        InvocationType='Event',
-        LogType='None',
-        Qualifier='$LATEST'
-    )
-
-    response_json = json.dumps(response, default=str)
-
-    return response_json
-
-def add_spark_step(dag, aux_args, job_id, params=None):
-
-    args = SPARK_ARGUMENTS.copy()
-    args.extend(aux_args)
-
-    if params:
-        args.append(json.dumps(params))
-
-    steps = {
-        'name': f'vini_etl_aws_{job_id}',
-        'args': args
-    }
-
-    task = EmrAddStepsOperator(
-        task_id=f'csv_to_parquet_{job_id}',
-        job_flow_id="{{ task_instance.xcom_pull(task_ids='create_emr_cluster', key='return_value') }}",
-        steps=steps,
-        aws_conn_id='aws',
-        dag=dag
-    )
-
-    return task
-
-def get_all_csvs_in_bucket():
-
-    bucket = 'landing-zone-vini-etl-aws'
-    prefix = 'data/'
-
-    s3 = boto3.client(
-        's3',
-        aws_access_key_id=Variable.get("AWS_ACCESS_KEY_ID"),
-        aws_secret_access_key=Variable.get("AWS_SECRET_ACCESS_KEY"),
-        region_name='us-east-1'
-    )
-
-    csv_files = []
-
-    for files in s3.list_objects_v2(Bucket=bucket, Prefix=prefix)['Contents']:
-        key = files['Key']
-        if key.endswith(".csv"):
-            csv_files.append(key.split("/")[-1].split(".")[0])
-    
-    return csv_files
-
-################################### LISTS #####################################################
-
-buckets = [
-    'landing-zone',
-    'processing-zone',
-    'curated-zone'
-]
-
-################################### TASKS #####################################################
+###################################### TASKS ######################################
 
 default_args = {
     'owner': 'Vini Campos',
@@ -212,11 +177,6 @@ with DAG(
     catchup=False
 ) as dag:
 
-    task_lambda = PythonOperator(
-        task_id='trigger_lambda',
-        python_callable=trigger_lambda
-    )
-
     for bucket in buckets:
         create_buckets = S3CreateBucketOperator(
             task_id=f'create_bucket_{bucket}'+f'-{AWS_PROJECT}',
@@ -224,7 +184,6 @@ with DAG(
             region_name=REGION,
             aws_conn_id='aws'
         )
-        create_buckets >> task_lambda
 
     create_emr_cluster = EmrCreateJobFlowOperator(
         task_id="create_emr_cluster",
@@ -249,20 +208,27 @@ with DAG(
         aws_conn_id="aws"
     )
 
-    for file in get_all_csvs_in_bucket():
-        task_csv_to_parquet = add_spark_step(
-            dag,
-            CSV_TO_PARQUET_ARGS,
-            f'{file}',
+    task_lambda = PythonOperator(
+        task_id='trigger_lambda',
+        python_callable=trigger_lambda
+    )
+
+    for file in csv_files:
+        task_csv_to_parquet = EmrAddStepsOperator(
+            task_id=f'csv_to_parquet_{file}',
+            job_flow_id="{{ task_instance.xcom_pull(task_ids='create_emr_cluster', key='return_value') }}",
+            aws_conn_id='aws',
+            steps=SPARK_STEPS,
             params={
                 'file': file, 
                 'format_source': 'csv', 
                 'format_target': 'parquet'
-            }
+            },
+            dag=dag
         )
 
-        (
-            task_lambda >> create_emr_cluster >> 
-            
-            emr_create_sensor >> task_csv_to_parquet >> terminate_emr_cluster
-        )
+    (
+        create_buckets >> task_lambda >> create_emr_cluster >> 
+        
+        emr_create_sensor >> task_csv_to_parquet >> terminate_emr_cluster
+    )
