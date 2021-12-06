@@ -35,29 +35,29 @@ JOB_FLOW_OVERRIDES = {
                 'Name': 'MASTER_NODES',
                 'Market': 'ON_DEMAND',
                 'InstanceRole': 'MASTER',
-                'InstanceType': 'm5.xlarge',
+                'InstanceType': 't2.micro',
                 'InstanceCount': 1,
             },
             {
                 "Name": "CORE_NODES",
                 "Market": "ON_DEMAND",
                 "InstanceRole": "CORE",
-                "InstanceType": "m5.xlarge",
+                "InstanceType": "t2.micro",
                 "InstanceCount": 1,
             },
             {
                 "Name": "TASK_NODES",
-                "BidPrice": "0.098",
+                "BidPrice": "0.005",
                 "Market": "SPOT",
                 "InstanceRole": "TASK",
-                "InstanceType": "m5.xlarge",
+                "InstanceType": "t2.micro",
                 "InstanceCount": 1,
                 "AutoScalingPolicy":
                     {
                         "Constraints":
                     {
-                        "MinCapacity": 2,
-                        "MaxCapacity": 4
+                        "MinCapacity": 8,
+                        "MaxCapacity": 10
                     },
                     "Rules":
                         [
@@ -75,7 +75,7 @@ JOB_FLOW_OVERRIDES = {
                         "ComparisonOperator": "GREATER_THAN_OR_EQUAL",
                         "EvaluationPeriods": 1,
                         "MetricName": "Scale Up",
-                        "Period": 300,
+                        "Period": 30,
                         "Threshold": 15,
                         "Statistic": "AVERAGE",
                         "Threshold": 75
