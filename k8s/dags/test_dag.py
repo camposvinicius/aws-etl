@@ -150,10 +150,7 @@ def add_spark_step(dag, aux_args, job_id, params=None):
     if params:
         args.append(json.dumps(params))
 
-    steps = {
-        'name': f'vini_etl_aws_{job_id}',
-        'args': args
-    }
+    steps = args
 
     task = EmrAddStepsOperator(
         task_id=f'csv_to_parquet_{job_id}',
