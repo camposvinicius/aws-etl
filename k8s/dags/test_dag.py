@@ -75,7 +75,7 @@ JOB_FLOW_OVERRIDES = {
                         "ComparisonOperator": "GREATER_THAN_OR_EQUAL",
                         "EvaluationPeriods": 1,
                         "MetricName": "Scale Up",
-                        "Period": 30,
+                        "Period": 60,
                         "Threshold": 15,
                         "Statistic": "AVERAGE",
                         "Threshold": 75
