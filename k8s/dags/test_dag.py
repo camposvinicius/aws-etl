@@ -47,7 +47,7 @@ JOB_FLOW_OVERRIDES = {
             },
             {
                 "Name": "TASK_NODES",
-                "BidPrice": "0.010",
+                "BidPrice": "0.02",
                 "Market": "SPOT",
                 "InstanceRole": "TASK",
                 "InstanceType": "m1.medium",
