@@ -35,22 +35,22 @@ JOB_FLOW_OVERRIDES = {
                 'Name': 'MASTER_NODES',
                 'Market': 'ON_DEMAND',
                 'InstanceRole': 'MASTER',
-                'InstanceType': 't2.micro',
+                'InstanceType': 'm1.medium',
                 'InstanceCount': 1,
             },
             {
                 "Name": "CORE_NODES",
                 "Market": "ON_DEMAND",
                 "InstanceRole": "CORE",
-                "InstanceType": "t2.micro",
+                "InstanceType": "m1.medium",
                 "InstanceCount": 1,
             },
             {
                 "Name": "TASK_NODES",
-                "BidPrice": "0.005",
+                "BidPrice": "0.010",
                 "Market": "SPOT",
                 "InstanceRole": "TASK",
-                "InstanceType": "t2.micro",
+                "InstanceType": "m1.medium",
                 "InstanceCount": 1,
                 "AutoScalingPolicy":
                     {
