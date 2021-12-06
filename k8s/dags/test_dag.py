@@ -47,7 +47,7 @@ JOB_FLOW_OVERRIDES = {
             },
             {
                 "Name": "TASK_NODES",
-                "BidPrice": "0.098",
+                "BidPrice": "0.005",
                 "Market": "SPOT",
                 "InstanceRole": "TASK",
                 "InstanceType": "m5.xlarge",
@@ -75,7 +75,7 @@ JOB_FLOW_OVERRIDES = {
                         "ComparisonOperator": "GREATER_THAN_OR_EQUAL",
                         "EvaluationPeriods": 1,
                         "MetricName": "Scale Up",
-                        "Period": 300,
+                        "Period": 30,
                         "Threshold": 15,
                         "Statistic": "AVERAGE",
                         "Threshold": 75
