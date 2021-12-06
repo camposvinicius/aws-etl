@@ -43,15 +43,15 @@ JOB_FLOW_OVERRIDES = {
                 "Market": "ON_DEMAND",
                 "InstanceRole": "CORE",
                 "InstanceType": "m5.xlarge",
-                "InstanceCount": 2,
+                "InstanceCount": 1,
             },
             {
                 "Name": "TASK_NODES",
-                "BidPrice": "0.313",
+                "BidPrice": "0.098",
                 "Market": "SPOT",
                 "InstanceRole": "TASK",
                 "InstanceType": "m5.xlarge",
-                "InstanceCount": 2,
+                "InstanceCount": 1,
                 "AutoScalingPolicy":
                     {
                         "Constraints":
@@ -92,7 +92,8 @@ JOB_FLOW_OVERRIDES = {
     'VisibleToAllUsers': True,
     'JobFlowRole': 'EMR_EC2_DefaultRole',
     'ServiceRole': 'EMR_DefaultRole',
-    'AutoScalingRole': 'EMR_AutoScaling_DefaultRole'
+    'AutoScalingRole': 'EMR_AutoScaling_DefaultRole',
+    'StepConcurrencyLevel': 10
 }
 
 ################################### SPARK_ARGUMENTS #####################################################
@@ -209,6 +210,7 @@ with DAG(
     default_args=default_args,
     start_date=days_ago(1),
     schedule_interval='@daily',
+    concurrency=10,
     catchup=False
 ) as dag:
 
