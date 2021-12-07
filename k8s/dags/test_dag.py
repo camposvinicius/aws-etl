@@ -47,8 +47,7 @@ JOB_FLOW_OVERRIDES = {
             },
             {
                 "Name": "TASK_NODES",
-                "BidPrice": "0.095",
-                "Market": "SPOT",
+                "Market": "ON_DEMAND",
                 "InstanceRole": "TASK",
                 "InstanceType": "m5.xlarge",
                 "InstanceCount": 1,
@@ -151,7 +150,7 @@ def add_spark_step(dag, aux_args, job_id, params=None):
         args.append(json.dumps(params))
 
     steps = [{
-        "Name": "Converting CSV to Parquet.",
+        "Name": f"Converting CSV to Parquet - Job {job_id}",
         "ActionOnFailure": "CANCEL_AND_WAIT",
         "HadoopJarStep": {
             "Jar": "command-runner.jar",
