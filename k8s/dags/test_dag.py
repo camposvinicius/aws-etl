@@ -226,8 +226,8 @@ with DAG(
 
     for bucket in buckets:
         create_buckets = S3CreateBucketOperator(
-            task_id=f'create_bucket_{bucket}'+f'-{AWS_PROJECT}',
-            bucket_name=bucket+f'-{AWS_PROJECT}',
+            task_id=f'create_bucket_{bucket}'+f'_{AWS_PROJECT}',
+            bucket_name=bucket+f'_{AWS_PROJECT}',
             region_name=REGION,
             aws_conn_id='aws'
         )
