@@ -93,7 +93,7 @@ JOB_FLOW_OVERRIDES = {
     'JobFlowRole': 'EMR_EC2_DefaultRole',
     'ServiceRole': 'EMR_DefaultRole',
     'AutoScalingRole': 'EMR_AutoScaling_DefaultRole',
-    'StepConcurrencyLevel': 10
+    'StepConcurrencyLevel': 1
 }
 
 ################################### SPARK_ARGUMENTS #####################################################
@@ -152,7 +152,7 @@ def add_spark_step(dag, aux_args, job_id, params=None):
 
     steps = [{
         "Name": "Converting CSV to Parquet.",
-        "ActionOnFailure": "CONTINUE",
+        "ActionOnFailure": "CANCEL_AND_WAIT",
         "HadoopJarStep": {
             "Jar": "command-runner.jar",
              "Args": args
@@ -214,7 +214,7 @@ with DAG(
     default_args=default_args,
     start_date=days_ago(1),
     schedule_interval='@daily',
-    concurrency=10,
+    concurrency=1,
     catchup=False
 ) as dag:
 
