@@ -151,6 +151,8 @@ def add_spark_step(dag, aux_args, job_id, params=None):
         args.append(json.dumps(params))
 
     steps = [{
+        "Name": "Converting CSV to Parquet.",
+        "ActionOnFailure": "CANCEL_AND_WAIT",
         "HadoopJarStep": {
             "Jar": "command-runner.jar",
              "Args": args
