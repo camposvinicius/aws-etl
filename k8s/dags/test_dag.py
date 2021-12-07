@@ -7,20 +7,21 @@ from airflow import DAG
 from airflow.models import Variable
 from airflow.utils.dates import days_ago
 from airflow.operators.python import PythonOperator
-from airflow.providers.amazon.aws.operators.s3_bucket import (
-    S3CreateBucketOperator, 
-    S3DeleteBucketOperator
-)
+
+from airflow.providers.amazon.aws.operators.s3_bucket import S3CreateBucketOperator
+from airflow.providers.amazon.aws.sensors.s3_key import S3KeySensor
+from airflow.providers.amazon.aws.operators.s3_list import S3ListOperator
 from airflow.contrib.operators.emr_create_job_flow_operator import EmrCreateJobFlowOperator
-from airflow.contrib.operators.emr_terminate_job_flow_operator import EmrTerminateJobFlowOperator
 from airflow.providers.amazon.aws.sensors.emr_job_flow import EmrJobFlowSensor
+from airflow.contrib.operators.emr_terminate_job_flow_operator import EmrTerminateJobFlowOperator
 from airflow.contrib.operators.emr_add_steps_operator import EmrAddStepsOperator
 from airflow.providers.amazon.aws.sensors.emr_step import EmrStepSensor
 
-################################### VARIABLES ##########################################################
+################################### VARIABLES ###########################################################
 
 AWS_PROJECT = getenv("AWS_PROJECT", "vini-etl-aws")
 REGION = getenv("REGION", "us-east-1")
+LANDING_ZONE = getenv('LANDING_ZONE', 'landing-zone-vini-etl-aws')
 
 CODE_PATH = 's3://emr-code-zone-vini-etl-aws'
 
@@ -120,7 +121,24 @@ CSV_TO_PARQUET_ARGS = [
     f'{CODE_PATH}/csv-to-parquet.py'
 ]
 
-################################### FUNCTIONS #####################################################
+################################### LISTS #####################################################
+
+csv_files = [
+  'tags',
+  'ratings',
+  'movies',
+  'links',
+  'genome-tags',
+  'genome-scores'
+]
+
+buckets = [
+    'landing-zone',
+    'processing-zone',
+    'curated-zone'
+]
+
+################################### FUNCTIONS ###########################################################
 
 def trigger_lambda():
 
@@ -169,35 +187,6 @@ def add_spark_step(dag, aux_args, job_id, params=None):
 
     return task
 
-def get_all_csvs_in_bucket():
-
-    bucket = 'landing-zone-vini-etl-aws'
-    prefix = 'data/'
-
-    s3 = boto3.client(
-        's3',
-        aws_access_key_id=Variable.get("AWS_ACCESS_KEY_ID"),
-        aws_secret_access_key=Variable.get("AWS_SECRET_ACCESS_KEY"),
-        region_name='us-east-1'
-    )
-
-    csv_files = []
-
-    for files in s3.list_objects_v2(Bucket=bucket, Prefix=prefix)['Contents']:
-        key = files['Key']
-        if key.endswith(".csv"):
-            csv_files.append(key.split("/")[-1].split(".")[0])
-    
-    return csv_files
-
-################################### LISTS #####################################################
-
-buckets = [
-    'landing-zone',
-    'processing-zone',
-    'curated-zone'
-]
-
 ################################### TASKS #####################################################
 
 default_args = {
@@ -224,14 +213,26 @@ with DAG(
         python_callable=trigger_lambda
     )
 
+    verify_csv_files_on_s3 = S3KeySensor(
+        task_id='verify_csv_files_on_s3',
+        bucket_key='data/*.csv',
+        wildcard_match=True,
+        bucket_name=LANDING_ZONE,
+        aws_conn_id='aws',
+        soft_fail=False,
+        poke_interval=15,
+        timeout=60,
+        dag=dag
+    )
+
     for bucket in buckets:
         create_buckets = S3CreateBucketOperator(
             task_id=f'create_bucket_{bucket}'+f'_{AWS_PROJECT}',
-            bucket_name=bucket+f'_{AWS_PROJECT}',
+            bucket_name=bucket+f'-{AWS_PROJECT}',
             region_name=REGION,
             aws_conn_id='aws'
         )
-        create_buckets >> task_lambda
+        create_buckets >> task_lambda >> verify_csv_files_on_s3
 
     create_emr_cluster = EmrCreateJobFlowOperator(
         task_id="create_emr_cluster",
@@ -257,7 +258,7 @@ with DAG(
         aws_conn_id="aws"
     )
 
-    for file in get_all_csvs_in_bucket():
+    for file in csv_files:
         task_csv_to_parquet = add_spark_step(
             dag,
             CSV_TO_PARQUET_ARGS,
@@ -272,7 +273,7 @@ with DAG(
         step_checker = EmrStepSensor(
             task_id=f'watch_step_{file}',
             job_flow_id="{{ task_instance.xcom_pull(task_ids='create_emr_cluster', key='return_value') }}",
-            step_id="{{ task_instance.xcom_pull(task_ids='csv_to_parquet_{file}', key='return_value')[0] }}".format(file=file),
+            step_id=f"{{{{ task_instance.xcom_pull(task_ids='csv_to_parquet_{file}', key='return_value')[0] }}}}",
             target_states=['COMPLETED'],
             failed_states=['CANCELLED', 'FAILED', 'INTERRUPTED'],
             aws_conn_id="aws",
@@ -280,7 +281,7 @@ with DAG(
         )
 
         (
-            task_lambda >> create_emr_cluster >> 
+            verify_csv_files_on_s3 >> create_emr_cluster >> 
             
             emr_create_sensor >> task_csv_to_parquet >> step_checker >> terminate_emr_cluster
         )

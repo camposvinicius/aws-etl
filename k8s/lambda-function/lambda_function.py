@@ -1,13 +1,12 @@
 import requests, io, tempfile, os, boto3
 from zipfile import ZipFile
 
-file_name = 'LDaVinciResearcherFormat_202105_csv.zip'
+file_name = 'ml-25m.zip'
+bucket = "landing-zone-vini-etl-aws"
+folder_temp_name = 'temp'
+url = 'https://files.grouplens.org/datasets/movielens/ml-25m.zip'
 
 def lambda_handler(event, context):
-
-    bucket = "landing-zone-vini-etl-aws"
-    folder_temp_name = 'temp'
-    url = 'https://www.bl.uk/bibliographic/downloads/LDaVinciResearcherFormat_202105_csv.zip'
     
     with tempfile.TemporaryDirectory() as temp_path:
         temp_dir = os.path.join(temp_path, folder_temp_name)
