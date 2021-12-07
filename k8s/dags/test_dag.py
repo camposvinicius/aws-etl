@@ -276,10 +276,8 @@ with DAG(
             dag=dag
         )
 
-        task_csv_to_parquet >> step_checker
-
         (
             task_lambda >> create_emr_cluster >> 
             
-            emr_create_sensor >> step_checker >> terminate_emr_cluster
+            emr_create_sensor >> task_csv_to_parquet >> step_checker >> terminate_emr_cluster
         )
