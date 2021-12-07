@@ -15,6 +15,7 @@ from airflow.contrib.operators.emr_create_job_flow_operator import EmrCreateJobF
 from airflow.contrib.operators.emr_terminate_job_flow_operator import EmrTerminateJobFlowOperator
 from airflow.providers.amazon.aws.sensors.emr_job_flow import EmrJobFlowSensor
 from airflow.contrib.operators.emr_add_steps_operator import EmrAddStepsOperator
+from airflow.providers.amazon.aws.sensors.emr_step import EmrStepSensor
 
 ################################### VARIABLES ##########################################################
 
@@ -214,6 +215,7 @@ with DAG(
     start_date=days_ago(1),
     schedule_interval='@daily',
     concurrency=1,
+    max_active_runs=1,
     catchup=False
 ) as dag:
 
@@ -266,8 +268,18 @@ with DAG(
             }
         )
 
+        step_checker = EmrStepSensor(
+            task_id=f'watch_step_{file}',
+            job_flow_id=task_csv_to_parquet.output,
+            step_id=f"{{ task_instance.xcom_pull(task_ids='csv_to_parquet_{file}', key='return_value')[0] }}",
+            aws_conn_id="aws",
+            dag=dag
+        )
+
+        task_csv_to_parquet >> step_checker
+
         (
             task_lambda >> create_emr_cluster >> 
             
-            emr_create_sensor >> task_csv_to_parquet >> terminate_emr_cluster
+            emr_create_sensor >> step_checker >> terminate_emr_cluster
         )
