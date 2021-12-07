@@ -150,7 +150,12 @@ def add_spark_step(dag, aux_args, job_id, params=None):
     if params:
         args.append(json.dumps(params))
 
-    steps = args
+    steps = [{
+        "HadoopJarStep": {
+            "Jar": "command-runner.jar",
+             "Args": args
+        }
+    }]
 
     task = EmrAddStepsOperator(
         task_id=f'csv_to_parquet_{job_id}',
