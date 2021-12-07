@@ -253,6 +253,7 @@ with DAG(
     terminate_emr_cluster = EmrTerminateJobFlowOperator(
         task_id='terminate_emr_cluster',
         job_flow_id="{{ task_instance.xcom_pull(task_ids='create_emr_cluster', key='return_value') }}",
+        trigger_rule="all_done",
         aws_conn_id="aws"
     )
 
@@ -270,8 +271,10 @@ with DAG(
 
         step_checker = EmrStepSensor(
             task_id=f'watch_step_{file}',
-            job_flow_id=task_csv_to_parquet.output,
-            step_id=f"{{ task_instance.xcom_pull(task_ids='csv_to_parquet_{file}', key='return_value')[0] }}",
+            job_flow_id="{{ task_instance.xcom_pull(task_ids='create_emr_cluster', key='return_value') }}",
+            step_id="{{ task_instance.xcom_pull(task_ids='csv_to_parquet_{file}', key='return_value')[0] }}".format(file=file),
+            target_states=['COMPLETED'],
+            failed_states=['CANCELLED', 'FAILED', 'INTERRUPTED'],
             aws_conn_id="aws",
             dag=dag
         )
