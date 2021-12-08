@@ -215,7 +215,7 @@ with DAG(
 
     verify_csv_files_on_s3 = S3KeySensor(
         task_id='verify_csv_files_on_s3',
-        bucket_key='data/*.csv',
+        bucket_key='data/ml-25m/*.csv',
         wildcard_match=True,
         bucket_name=LANDING_ZONE,
         aws_conn_id='aws',
