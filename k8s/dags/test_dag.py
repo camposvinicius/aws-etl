@@ -2,6 +2,7 @@ import boto3
 import json
 
 from os import getenv
+from datetime import timedelta
 
 from airflow import DAG
 from airflow.models import Variable
@@ -210,7 +211,8 @@ with DAG(
 
     task_lambda = PythonOperator(
         task_id='trigger_lambda',
-        python_callable=trigger_lambda
+        python_callable=trigger_lambda,
+        execution_timeout=timedelta(seconds=120)
     )
 
     verify_csv_files_on_s3 = S3KeySensor(
