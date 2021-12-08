@@ -11,7 +11,6 @@ from airflow.operators.python import PythonOperator
 
 from airflow.providers.amazon.aws.operators.s3_bucket import S3CreateBucketOperator
 from airflow.providers.amazon.aws.sensors.s3_key import S3KeySensor
-from airflow.providers.amazon.aws.operators.s3_list import S3ListOperator
 from airflow.contrib.operators.emr_create_job_flow_operator import EmrCreateJobFlowOperator
 from airflow.providers.amazon.aws.sensors.emr_job_flow import EmrJobFlowSensor
 from airflow.contrib.operators.emr_terminate_job_flow_operator import EmrTerminateJobFlowOperator
@@ -50,7 +49,8 @@ JOB_FLOW_OVERRIDES = {
             },
             {
                 "Name": "TASK_NODES",
-                "Market": "ON_DEMAND",
+                "Market": "SPOT",
+                "BidPrice": "0.098",
                 "InstanceRole": "TASK",
                 "InstanceType": "m5.xlarge",
                 "InstanceCount": 1,
@@ -88,6 +88,7 @@ JOB_FLOW_OVERRIDES = {
                 }
             }
         ],
+        'Ec2KeyName': 'my-key',
         'KeepJobFlowAliveWhenNoSteps': True,
         'TerminationProtected': False,
     },
