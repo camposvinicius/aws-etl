@@ -11,7 +11,6 @@ from airflow.operators.python import PythonOperator
 
 from airflow.providers.amazon.aws.operators.s3_bucket import S3CreateBucketOperator
 from airflow.providers.amazon.aws.sensors.s3_key import S3KeySensor
-from airflow.providers.amazon.aws.operators.s3_list import S3ListOperator
 from airflow.contrib.operators.emr_create_job_flow_operator import EmrCreateJobFlowOperator
 from airflow.providers.amazon.aws.sensors.emr_job_flow import EmrJobFlowSensor
 from airflow.contrib.operators.emr_terminate_job_flow_operator import EmrTerminateJobFlowOperator
@@ -38,28 +37,29 @@ JOB_FLOW_OVERRIDES = {
                 'Name': 'MASTER_NODES',
                 'Market': 'ON_DEMAND',
                 'InstanceRole': 'MASTER',
-                'InstanceType': 'm5.xlarge',
+                'InstanceType': 'c1.medium',
                 'InstanceCount': 1,
             },
             {
                 "Name": "CORE_NODES",
                 "Market": "ON_DEMAND",
                 "InstanceRole": "CORE",
-                "InstanceType": "m5.xlarge",
+                "InstanceType": "c1.medium",
                 "InstanceCount": 1,
             },
             {
                 "Name": "TASK_NODES",
-                "Market": "ON_DEMAND",
+                "Market": "SPOT",
+                "BidPrice": "0.023",
                 "InstanceRole": "TASK",
-                "InstanceType": "m5.xlarge",
+                "InstanceType": "c1.medium",
                 "InstanceCount": 1,
                 "AutoScalingPolicy":
                     {
                         "Constraints":
                     {
-                        "MinCapacity": 1,
-                        "MaxCapacity": 2
+                        "MinCapacity": 5,
+                        "MaxCapacity": 10
                     },
                     "Rules":
                         [
@@ -88,6 +88,7 @@ JOB_FLOW_OVERRIDES = {
                 }
             }
         ],
+        'Ec2KeyName': 'my-key',
         'KeepJobFlowAliveWhenNoSteps': True,
         'TerminationProtected': False,
     },
