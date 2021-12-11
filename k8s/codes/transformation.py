@@ -28,12 +28,15 @@ class ServeData:
         views_to_drop = []
 
         for view in VIEWS:
+            print(view)
             (
                 spark.read.format("parquet")
                 .load(f'{self.path_target}'.format(file=view))
                 .createOrReplaceTempView(f'{view}')
             )
             views_to_drop.append(view)
+
+        print(views_to_drop)
         
         df = spark.sql(self.query['QUERY'])
 
