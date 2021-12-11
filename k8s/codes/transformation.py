@@ -45,6 +45,7 @@ class ServeData:
         (
             df.coalesce(1)
             .write.format("parquet")
+            .mode("overwrite")
             .save(self.path_curated)
         )
 
