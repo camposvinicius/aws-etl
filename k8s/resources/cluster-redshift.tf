@@ -36,7 +36,7 @@ resource "aws_default_security_group" "redshift_security_group" {
 
 resource "aws_subnet" "redshift_subnet_1" {
   vpc_id                  = aws_vpc.redshift_vpc.id
-  cidr_block              = "10.0.1.0/26"
+  cidr_block              = "10.0.1.0/18"
   availability_zone       = "us-east-1a"
   map_public_ip_on_launch = "true"
 
