@@ -1,10 +1,10 @@
 import requests, io, tempfile, os, boto3
 from zipfile import ZipFile
 
-file_name = 'ml-25m.zip'
+file_name = 'AdventureWorks.zip'
 bucket = "landing-zone-vini-etl-aws"
 folder_temp_name = 'temp'
-url = 'https://files.grouplens.org/datasets/movielens/ml-25m.zip'
+url = 'https://github.com/camposvinicius/aws-etl/raw/dev/data/AdventureWorks.zip'
 
 def lambda_handler(event, context):
     

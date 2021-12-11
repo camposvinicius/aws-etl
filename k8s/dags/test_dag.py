@@ -37,29 +37,29 @@ JOB_FLOW_OVERRIDES = {
                 'Name': 'MASTER_NODES',
                 'Market': 'ON_DEMAND',
                 'InstanceRole': 'MASTER',
-                'InstanceType': 'm5.xlarge',
+                'InstanceType': 'c1.medium',
                 'InstanceCount': 1,
             },
             {
                 "Name": "CORE_NODES",
                 "Market": "ON_DEMAND",
                 "InstanceRole": "CORE",
-                "InstanceType": "m5.xlarge",
+                "InstanceType": "c1.medium",
                 "InstanceCount": 1,
             },
             {
                 "Name": "TASK_NODES",
                 "Market": "SPOT",
-                "BidPrice": "0.098",
+                "BidPrice": "0.023",
                 "InstanceRole": "TASK",
-                "InstanceType": "m5.xlarge",
+                "InstanceType": "c1.medium",
                 "InstanceCount": 1,
                 "AutoScalingPolicy":
                     {
                         "Constraints":
                     {
-                        "MinCapacity": 1,
-                        "MaxCapacity": 2
+                        "MinCapacity": 5,
+                        "MaxCapacity": 10
                     },
                     "Rules":
                         [
