@@ -3,7 +3,6 @@ PATH_TARGET = 's3://processing-zone-vini-etl-aws/processing/AdventureWorks_{file
 PATH_CURATED = 's3://curated-zone-vini-etl-aws/curated/'
 
 VIEWS = [
-  'Calendar',
   'Customers',
   'Product_Categories',
   'Product_Subcategories',
