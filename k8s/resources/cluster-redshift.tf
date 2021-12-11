@@ -6,4 +6,5 @@ resource "aws_redshift_cluster" "default" {
   node_type           = "dc2.large"
   cluster_type        = "single-node"
   skip_final_snapshot = true
+  publicly_accessible = true
 }
