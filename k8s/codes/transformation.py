@@ -1,30 +1,19 @@
 import logging
 import sys
-import ast
-
-import pyspark.sql.functions as f
 
 from pyspark.sql import SparkSession
-from variables import PATH_SOURCE, PATH_TARGET
+from variables import PATH_TARGET, PATH_CURATED, QUERY, VIEWS
 
-class CSVtoPARQUET:
-    def __init__(self, spark, path_source:str, format_source: str, path_target:str, format_target: str) -> None:
+class ServeData:
+    def __init__(self, spark) -> None:
         self.spark = spark
-
-        if format_source != 'csv':
-            raise Exception(f"The format_source {format_source} is not supported. Use CSV.")
-        elif format_target != 'parquet':
-            raise Exception(f"The format_target {format_target} is not supported. Use PARQUET.")
-        else:
-            self.format_source = format_source
-            self.format_target = format_target
-        
-        self.path_source = path_source
-        self.path_target = path_target
+        self.path_target = PATH_TARGET
+        self.path_curated = PATH_CURATED
+        self.query = QUERY
     
     def run(self) -> str:
         self.create_logger()
-        self.csv_to_parquet()
+        self.to_curated()
 
         return "Application completed. Going out..."
 
@@ -34,16 +23,30 @@ class CSVtoPARQUET:
         logger = logging.getLogger('ETL_AWS_VINICIUS_CAMPOS')
         logger.setLevel(logging.DEBUG)
 
-    def csv_to_parquet(self):
-        df = (
-            self.spark.read.format(self.format_source)
-            .option("sep", ",")
-            .option("header", True)
-            .option("encoding", "utf-8")
-            .load(self.path_source)
-        )
+    def to_curated(self):
 
-        return df.coalesce(1).write.mode("overwrite").format(self.format_target).save(self.path_target)
+        views_to_drop = []
+
+        for view in VIEWS:
+            (
+                spark.read.format("parquet")
+                .load(f'{self.path_target}'.format(file=view))
+                .createOrReplaceTempView(f'{view}')
+            )
+            views_to_drop.append(view)
+        
+        df = spark.sql(self.query['QUERY'])
+
+        for view in views_to_drop:
+            spark.catalog.dropTempView(f"{view}")
+
+        df.cache()
+
+        (
+            df.coalesce(1)
+            .write.format("parquet")
+            .save(self.path_curated)
+        )
 
 if __name__ == "__main__":
 
@@ -70,19 +73,7 @@ if __name__ == "__main__":
 
     spark.sparkContext.setLogLevel("ERROR")
 
-    script_input = ast.literal_eval(sys.argv[1])
-    
-    file = script_input['file']
-    format_source = script_input['format_source']
-    format_target = script_input['format_target']
-
-    m = CSVtoPARQUET(
-        spark, 
-        PATH_SOURCE.format(file=file), 
-        format_source,
-        PATH_TARGET.format(file=file),
-        format_target
-    )
+    m = ServeData(spark)
 
     m.run()
 
