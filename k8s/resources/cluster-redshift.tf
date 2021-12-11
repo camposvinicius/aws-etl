@@ -15,7 +15,16 @@ resource "aws_redshift_cluster" "default" {
 }
 
 resource "aws_iam_role" "role_redshift" {
-  name = "role_redshift"
+  name               = "role_redshift"
+  assume_role_policy = aws_iam_policy.redshift_policy.json
+  
+  depends_on = [
+    aws_iam_policy.redshift_policy
+  ]
+}
+
+resource "aws_iam_policy" "redshift_policy" {
+  name = "redshift_policy"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -27,7 +36,7 @@ resource "aws_iam_role" "role_redshift" {
           "s3:List*"
         ]
         Resource = "*"
-      },
+      }
     ]
   })
 }
