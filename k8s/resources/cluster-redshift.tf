@@ -21,16 +21,12 @@ resource "aws_iam_role" "role_redshift" {
     Version = "2012-10-17"
     Statement = [
       {
+        Effect = "Allow",
         Action = [
           "s3:Get*",
-          "s3:List*",
-          "sts:AssumeRole",
-        ]
-        Effect = "Allow"
-        Sid    = ""
-        Principal = {
-          Service = "redshift.amazonaws.com"
-        }
+          "s3:List*"
+        ],
+        Resource = "*"
       },
     ]
   })
