@@ -1,5 +1,5 @@
 PATH_SOURCE = 's3://landing-zone-vini-etl-aws/data/AdventureWorks/AdventureWorks_{file}.csv'
-PATH_TARGET = 's3://processing-zone-vini-etl-aws/processing/{file}'
+PATH_TARGET = 's3://processing-zone-vini-etl-aws/processing/AdventureWorks_{file}'
 PATH_CURATED = 's3://curated-zone-vini-etl-aws/curated/'
 
 VIEWS = [
