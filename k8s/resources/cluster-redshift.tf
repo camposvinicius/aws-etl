@@ -14,17 +14,9 @@ resource "aws_redshift_cluster" "default" {
   ]
 }
 
-resource "aws_iam_role" "role_redshift" {
-  name               = "role_redshift"
-  assume_role_policy = resource.aws_iam_policy.redshift_policy
-
-  depends_on = [
-    aws_iam_policy.redshift_policy
-  ]
-}
-
-resource "aws_iam_policy" "redshift_policy" {
+resource "aws_iam_role_policy" "redshift_policy" {
   name = "redshift_policy"
+  role = aws_iam_role.role_redshift.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -37,6 +29,27 @@ resource "aws_iam_policy" "redshift_policy" {
         ]
         Resource = "*"
       }
+    ]
+  })
+
+  depends_on = [
+    aws_iam_role.role_redshift
+  ]
+}
+resource "aws_iam_role" "role_redshift" {
+
+  name = "role_redshift"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Sid    = ""
+        Principal = {
+          Service = "redshift.amazonaws.com"
+        }
+      },
     ]
   })
 }

@@ -50,8 +50,8 @@ data "aws_vpc" "default" {
 }
 
 resource "aws_security_group" "vinipostgresql" {
-  vpc_id      = data.aws_vpc.default.id
-  name        = "vinipostgresql"
+  vpc_id = data.aws_vpc.default.id
+  name   = "vinipostgresql"
 
   ingress {
     from_port   = 5432
