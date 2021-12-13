@@ -16,3 +16,11 @@ variable "redshift_pass" {
 variable "redshift_db" {
   default = "etlvini"
 }
+
+variable "postgres_user" {
+  default = "vinietlaws"
+}
+
+variable "postgres_pass" {
+  default = "vinietlaws"
+}
