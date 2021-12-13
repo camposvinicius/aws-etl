@@ -24,7 +24,11 @@ provider "kubectl" {
 }
 
 provider "redshift" {
-  host     = aws_redshift_cluster.default.endpoint
-  username = aws_redshift_cluster.default.master_username
-  password = aws_redshift_cluster.default.master_password
+  host     = data.aws_redshift_cluster.default.endpoint
+  username = data.aws_redshift_cluster.default.master_username
+  password = data.aws_redshift_cluster.default.master_password
+
+  temporary_credentials {
+    cluster_identifier = data.aws_redshift_cluster.default.cluster_identifier
+  }
 }
