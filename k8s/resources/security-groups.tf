@@ -44,3 +44,21 @@ resource "aws_security_group" "all_worker_mgmt" {
     ]
   }
 }
+
+data "aws_vpc" "postgres" {
+  default = true
+}
+
+resource "aws_security_group" "vinipostgresql" {
+  vpc_id = data.aws_vpc.postgres.id
+
+  ingress {
+    from_port = 0
+    to_port   = 5432
+    protocol  = "tcp"
+  }
+
+  depends_on = [
+    data.aws_vpc.postgres
+  ]
+}
