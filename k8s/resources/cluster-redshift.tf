@@ -19,10 +19,9 @@ resource "aws_default_security_group" "redshift_security_group" {
   vpc_id = aws_vpc.redshift_vpc.id
 
   ingress {
-    from_port   = 0
-    to_port     = 5439
-    protocol    = "ALL"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port = 0
+    to_port   = 5439
+    protocol  = "tcp"
   }
 
   tags = {
@@ -121,15 +120,19 @@ resource "aws_iam_role" "redshift_role" {
 }
 
 resource "aws_redshift_cluster" "default" {
-  cluster_identifier  = "tf-redshift-cluster"
-  database_name       = "etlvini"
-  master_username     = "vini"
-  master_password     = "Etl-vini-aws-1"
+  cluster_identifier  = "redshift-cluster-etl-vini"
+  database_name       = var.redshift_db
+  master_username     = var.redshift_user
+  master_password     = var.redshift_pass
   node_type           = "dc2.large"
   cluster_type        = "single-node"
   skip_final_snapshot = true
   publicly_accessible = true
   iam_roles           = ["${aws_iam_role.redshift_role.arn}"]
+
+  tags = {
+    tag-key = "vini-cluster-redshift-etl-aws"
+  }
 
   depends_on = [
     aws_vpc.redshift_vpc,
