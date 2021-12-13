@@ -24,22 +24,14 @@ resource "aws_security_group" "vinipostgresql" {
   vpc_id = data.aws_vpc.default.id
   name   = "vinipostgresql"
 
+  ingress {
+    from_port = 0
+    to_port   = 5432
+    protocol  = "tcp"
+    security_groups = ["${aws_security_group.default.id}"]
+  }
+  
   tags = {
     tag-key = "sg-postgres"
   }
-}
-
-resource "aws_security_group_rule" "ingress_all" {
-  type              = "ingress"
-  from_port         = 0
-  to_port           = 5432
-  protocol          = "tcp"
-  security_group_id = aws_security_group.vinipostgresql.id
-
-  cidr_blocks       = [data.aws_vpc.default.cidr_block]
-  ipv6_cidr_blocks  = [data.aws_vpc.default.ipv6_cidr_block]
-
-  depends_on = [
-    aws_security_group.vinipostgresql
-  ]
 }
