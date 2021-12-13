@@ -15,3 +15,18 @@ resource "aws_db_instance" "vinipostgresql-instance" {
     tag-key = "vini-cluster-postgres-etl-aws"
   }
 }
+
+resource "aws_security_group" "vinipostgresql" {
+  vpc_id = aws_vpc.redshift_vpc.id
+  name   = "vinipostgresql"
+
+  ingress {
+    from_port = 0
+    to_port   = 5432
+    protocol  = "tcp"
+  }
+
+  tags = {
+    tag-key = "sg-postgres"
+  }
+}

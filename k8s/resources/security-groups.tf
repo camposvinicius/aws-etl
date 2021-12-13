@@ -44,26 +44,3 @@ resource "aws_security_group" "all_worker_mgmt" {
     ]
   }
 }
-
-data "aws_vpc" "default" {
-  default = true
-}
-
-resource "aws_security_group" "vinipostgresql" {
-  vpc_id = data.aws_vpc.default.id
-  name   = "vinipostgresql"
-
-  ingress {
-    from_port = 0
-    to_port   = 0
-    protocol  = "all"
-  }
-
-  tags = {
-    tag-key = "sg-postgres"
-  }
-
-  depends_on = [
-    data.aws_vpc.default
-  ]
-}
