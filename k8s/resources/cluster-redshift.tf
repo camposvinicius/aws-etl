@@ -121,7 +121,6 @@ resource "aws_iam_role" "redshift_role" {
 
 resource "aws_redshift_cluster" "default" {
   cluster_identifier  = "redshift-cluster-etl-vini"
-  database_name       = var.redshift_db
   master_username     = var.redshift_user
   master_password     = var.redshift_pass
   node_type           = "dc2.large"
@@ -140,18 +139,4 @@ resource "aws_redshift_cluster" "default" {
     aws_redshift_subnet_group.redshift_subnet_group,
     aws_iam_role.redshift_role
   ]
-}
-
-resource "redshift_schema" "schema" {
-  name  = "vini_etl_aws_redshift_schema"
-  owner = "vini"
-  quota = 150
-
-  depends_on = [
-    aws_redshift_cluster.default
-  ]
-}
-
-data "aws_redshift_cluster" "default" {
-  cluster_identifier = aws_redshift_cluster.default.cluster_identifier
 }

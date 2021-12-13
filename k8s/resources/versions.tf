@@ -24,11 +24,7 @@ terraform {
       source  = "gavinbunney/kubectl"
       version = ">= 1.7.0"
     }
-
-    redshift = {
-      source  = "brainly/redshift"
-      version = ">= 0.5.0"
-    }
+    
   }
 
   required_version = ">= 0.14"

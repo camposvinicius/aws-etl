@@ -12,7 +12,3 @@ variable "redshift_user" {
 variable "redshift_pass" {
   default = "Etl-vini-aws-1"
 }
-
-variable "redshift_db" {
-  default = "etlvini"
-}
