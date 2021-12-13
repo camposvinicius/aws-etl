@@ -5,3 +5,7 @@ variable "region" {
 variable "cluster_name" {
   default = "eks-cluster-vini-campos-etl-aws"
 }
+
+variable "redshift_pass" {
+  default = "Etl-vini-aws-1"
+}
