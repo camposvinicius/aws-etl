@@ -27,5 +27,4 @@ provider "redshift" {
   host     = data.aws_redshift_cluster.default.endpoint
   username = data.aws_redshift_cluster.default.master_username
   password = var.redshift_pass
-  database_name = data.aws_redshift_cluster.default.database_name
 }

@@ -154,4 +154,5 @@ resource "redshift_schema" "schema" {
 
 data "aws_redshift_cluster" "default" {
   cluster_identifier = aws_redshift_cluster.default.cluster_identifier
+  master_username = aws_redshift_cluster.default.master_username
 }
