@@ -45,12 +45,12 @@ resource "aws_security_group" "all_worker_mgmt" {
   }
 }
 
-data "aws_vpc" "postgres" {
+data "aws_vpc" "default" {
   default = true
 }
 
 resource "aws_security_group" "vinipostgresql" {
-  vpc_id = data.aws_vpc.postgres.id
+  vpc_id = data.aws_vpc.default.id
   name   = "vinipostgresql"
 
   ingress {
@@ -60,10 +60,10 @@ resource "aws_security_group" "vinipostgresql" {
   }
 
   tags = {
-    tag-key = "sg-postgresql"
+    tag-key = "sg-postgres"
   }
 
   depends_on = [
-    data.aws_vpc.postgres
+    data.aws_vpc.default
   ]
 }
