@@ -1,29 +1,61 @@
+import pandas as pd
 import boto3
 import json
+import io
 
 from os import getenv
 from datetime import timedelta
+from sqlalchemy import create_engine
 
 from airflow import DAG
 from airflow.models import Variable
 from airflow.utils.dates import days_ago
+
+################################### OPERATORS ###########################################################
+
 from airflow.operators.python import PythonOperator
 
-from airflow.providers.amazon.aws.operators.s3_bucket import S3CreateBucketOperator
+from airflow.providers.amazon.aws.operators.s3_bucket import (
+    S3CreateBucketOperator, 
+    S3DeleteBucketOperator
+)
 from airflow.providers.amazon.aws.sensors.s3_key import S3KeySensor
 from airflow.contrib.operators.emr_create_job_flow_operator import EmrCreateJobFlowOperator
 from airflow.providers.amazon.aws.sensors.emr_job_flow import EmrJobFlowSensor
 from airflow.contrib.operators.emr_terminate_job_flow_operator import EmrTerminateJobFlowOperator
 from airflow.contrib.operators.emr_add_steps_operator import EmrAddStepsOperator
 from airflow.providers.amazon.aws.sensors.emr_step import EmrStepSensor
+from airflow.providers.amazon.aws.operators.redshift import RedshiftSQLOperator
+from airflow.providers.amazon.aws.transfers.s3_to_redshift import S3ToRedshiftOperator
+from airflow.providers.postgres.operators.postgres import PostgresOperator
+from airflow.providers.amazon.aws.operators.glue_crawler import AwsGlueCrawlerOperator
 
 ################################### VARIABLES ###########################################################
 
 AWS_PROJECT = getenv("AWS_PROJECT", "vini-etl-aws")
-REGION = getenv("REGION", "us-east-1")
-LANDING_ZONE = getenv('LANDING_ZONE', 'landing-zone-vini-etl-aws')
 
-CODE_PATH = 's3://emr-code-zone-vini-etl-aws'
+REGION = getenv("REGION", "us-east-1")
+AWS_ACCESS_KEY_ID = Variable.get("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = Variable.get("AWS_SECRET_ACCESS_KEY")
+
+LANDING_ZONE = getenv('LANDING_ZONE', f'landing-zone-{AWS_PROJECT}')
+CURATED_ZONE = getenv('CURATED_ZONE', f'curated-zone-{AWS_PROJECT}')
+CURATED_KEY = getenv('CURATED_KEY', 'curated/')
+
+REDSHIFT_USER = getenv("REDSHIFT_USER", "vini")
+REDSHIFT_SCHEMA = getenv("REDSHIFT_SCHEMA", "vini_etl_aws_redshift_schema")
+REDSHIFT_TABLE = getenv("REDSHIFT_TABLE", "vini_etl_aws_redshift_table")
+
+POSTGRES_PASSWORD = Variable.get("POSTGRES_PASSWORD")
+POSTGRES_USERNAME = 'vinietlaws'
+POSTGRES_PORT = '5432'
+POSTGRES_DATABASE = 'vinipostgresql'
+POSTGRESQL_TABLE = 'vini_etl_aws_postgresql_table'
+POSTGRES_ENDPOINT = f'{POSTGRES_DATABASE}-instance.cngltutuixt3.us-east-1.rds.amazonaws.com'
+
+POSTGRESQL_CONNECTION = f'postgresql://{POSTGRES_USERNAME}:{POSTGRES_PASSWORD}@{POSTGRES_ENDPOINT}:{POSTGRES_PORT}/{POSTGRES_DATABASE}'
+
+EMR_CODE_PATH = 's3://emr-code-zone-vini-etl-aws'
 
 ################################### SPARK_CLUSTER_CONFIG ################################################
 
@@ -37,29 +69,29 @@ JOB_FLOW_OVERRIDES = {
                 'Name': 'MASTER_NODES',
                 'Market': 'ON_DEMAND',
                 'InstanceRole': 'MASTER',
-                'InstanceType': 'c1.medium',
+                'InstanceType': 'm5.xlarge',
                 'InstanceCount': 1,
             },
             {
                 "Name": "CORE_NODES",
                 "Market": "ON_DEMAND",
                 "InstanceRole": "CORE",
-                "InstanceType": "c1.medium",
+                "InstanceType": "m5.xlarge",
                 "InstanceCount": 1,
             },
             {
                 "Name": "TASK_NODES",
                 "Market": "SPOT",
-                "BidPrice": "0.023",
+                "BidPrice": "0.078",
                 "InstanceRole": "TASK",
-                "InstanceType": "c1.medium",
+                "InstanceType": "m5.xlarge",
                 "InstanceCount": 1,
                 "AutoScalingPolicy":
                     {
                         "Constraints":
                     {
-                        "MinCapacity": 5,
-                        "MaxCapacity": 10
+                        "MinCapacity": 1,
+                        "MaxCapacity": 2
                     },
                     "Rules":
                         [
@@ -119,19 +151,26 @@ SPARK_ARGUMENTS = [
 ]
 
 CSV_TO_PARQUET_ARGS = [
-    '--py-files', f'{CODE_PATH}/variables.py',
-    f'{CODE_PATH}/csv-to-parquet.py'
+    '--py-files', f'{EMR_CODE_PATH}/variables.py',
+    f'{EMR_CODE_PATH}/csv-to-parquet.py'
+]
+
+SEND_TO_CURATED = [
+    '--py-files', f'{EMR_CODE_PATH}/variables.py',
+    f'{EMR_CODE_PATH}/transformation.py'
 ]
 
 ################################### LISTS #####################################################
 
 csv_files = [
-  'tags',
-  'ratings',
-  'movies',
-  'links',
-  'genome-tags',
-  'genome-scores'
+  'Customers',
+  'Product_Categories',
+  'Product_Subcategories',
+  'Products',
+  'Returns',
+  'Sales_2015',
+  'Sales_2016',
+  'Sales_2017'
 ]
 
 buckets = [
@@ -146,8 +185,8 @@ def trigger_lambda():
 
     lambda_client = boto3.client(
         'lambda',
-        aws_access_key_id=Variable.get("AWS_ACCESS_KEY_ID"),
-        aws_secret_access_key=Variable.get("AWS_SECRET_ACCESS_KEY"),
+        aws_access_key_id=AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
         region_name=REGION
     )
 
@@ -162,7 +201,7 @@ def trigger_lambda():
 
     return response_json
 
-def add_spark_step(dag, aux_args, job_id, params=None):
+def add_spark_step(dag, aux_args, job_id, task_id, params=None):
 
     args = SPARK_ARGUMENTS.copy()
     args.extend(aux_args)
@@ -180,7 +219,7 @@ def add_spark_step(dag, aux_args, job_id, params=None):
     }]
 
     task = EmrAddStepsOperator(
-        task_id=f'csv_to_parquet_{job_id}',
+        task_id=task_id,
         job_flow_id="{{ task_instance.xcom_pull(task_ids='create_emr_cluster', key='return_value') }}",
         steps=steps,
         aws_conn_id='aws',
@@ -188,6 +227,36 @@ def add_spark_step(dag, aux_args, job_id, params=None):
     )
 
     return task
+
+def write_on_postgres():
+   
+    s3_client = boto3.client('s3', 
+        aws_access_key_id=AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+        region_name=REGION
+    )
+
+    s3 = boto3.resource('s3',
+        aws_access_key_id=AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+        region_name=REGION
+    )
+
+    parquet_list = []
+
+    objects = s3_client.list_objects_v2(Bucket=CURATED_ZONE)
+
+    for obj in objects['Contents']:
+        parquet_list.append(obj['Key'])
+
+    key = parquet_list[-1]
+    buffer = io.BytesIO()
+    object = s3.Object(CURATED_ZONE, key)
+    object.download_fileobj(buffer)
+    df = pd.read_parquet(buffer)
+
+    engine = create_engine(POSTGRESQL_CONNECTION)
+    df.to_sql(f'{POSTGRESQL_TABLE}', engine, schema='public', if_exists='replace', index=False)
 
 ################################### TASKS #####################################################
 
@@ -205,7 +274,7 @@ with DAG(
     default_args=default_args,
     start_date=days_ago(1),
     schedule_interval='@daily',
-    concurrency=1,
+    concurrency=10,
     max_active_runs=1,
     catchup=False
 ) as dag:
@@ -218,7 +287,7 @@ with DAG(
 
     verify_csv_files_on_s3 = S3KeySensor(
         task_id='verify_csv_files_on_s3',
-        bucket_key='data/ml-25m/*.csv',
+        bucket_key='data/AdventureWorks/*.csv',
         wildcard_match=True,
         bucket_name=LANDING_ZONE,
         aws_conn_id='aws',
@@ -261,13 +330,122 @@ with DAG(
         aws_conn_id="aws"
     )
 
+    task_send_to_curated = add_spark_step(
+        dag,
+        SEND_TO_CURATED,
+        'task_send_to_curated',
+        'task_send_to_curated',
+    )
+
+    step_checker_curated = EmrStepSensor(
+        task_id=f'watch_task_send_to_curated',
+        job_flow_id="{{ task_instance.xcom_pull(task_ids='create_emr_cluster', key='return_value') }}",
+        step_id="{{ task_instance.xcom_pull(task_ids='task_send_to_curated', key='return_value')[0] }}",
+        target_states=['COMPLETED'],
+        failed_states=['CANCELLED', 'FAILED', 'INTERRUPTED'],
+        aws_conn_id="aws",
+        dag=dag
+    )
+
+    create_schema_redshift = RedshiftSQLOperator(
+        task_id='create_schema_redshift',
+        sql=f"""
+            CREATE SCHEMA IF NOT EXISTS {REDSHIFT_SCHEMA} AUTHORIZATION {REDSHIFT_USER} QUOTA 2048 MB;
+        """,
+        redshift_conn_id='redshift'
+    )
+
+    create_table_redshift = RedshiftSQLOperator(
+        task_id='create_table_redshift',
+        sql=f""" 
+            CREATE TABLE IF NOT EXISTS {REDSHIFT_SCHEMA}.{REDSHIFT_TABLE} (
+                OrderDate date,
+                StockDate date,
+                CustomerKey int,
+                TerritoryKey int,
+                OrderLineItem int,
+                OrderQuantity int,
+                Prefix varchar,
+                FirstName varchar,
+                LastName varchar,
+                BirthDate date,
+                MaritalStatus varchar,
+                Gender varchar,
+                EmailAddress varchar,
+                AnnualIncome decimal(10,2),
+                TotalChildren int,
+                EducationLevel varchar,
+                Occupation varchar,
+                HomeOwner varchar,
+                ProductKey int,
+                ProductSubcategoryKey int,
+                SubcategoryName varchar,
+                ProductCategoryKey int,
+                CategoryName varchar,
+                ProductSKU varchar,
+                ProductName varchar,
+                ModelName varchar,
+                ProductDescription varchar,
+                ProductColor varchar,
+                ProductSize int,
+                ProductStyle varchar,
+                ProductCost decimal(10,2),
+                ProductPrice decimal(10,2),
+                ReturnDate date,
+                ReturnQuantity int
+            );
+        """,
+        redshift_conn_id='redshift'
+    )
+
+    s3_to_redshift = S3ToRedshiftOperator(
+        task_id='s3_to_redshift',
+        s3_bucket=CURATED_ZONE,
+        s3_key=CURATED_KEY,
+        schema=REDSHIFT_SCHEMA,
+        table=REDSHIFT_TABLE,
+        aws_conn_id='aws',
+        redshift_conn_id='redshift',
+        copy_options=['parquet']
+    )
+
+    create_schema_redshift >> create_table_redshift >> s3_to_redshift
+
+    write_data_on_postgres = PythonOperator(
+        task_id='write_data_on_postgres',
+        python_callable=write_on_postgres
+    )
+
+    verify_table_count = PostgresOperator(
+        task_id=f'verify_{POSTGRESQL_TABLE}_count',
+        sql=f""" 
+            SELECT 
+                *
+            FROM
+                {POSTGRESQL_TABLE}
+            );
+        """,
+        postgres_conn_id='postgres',
+        database=POSTGRES_DATABASE
+    )
+
+    write_data_on_postgres >> verify_table_count
+
+    glue_crawler = AwsGlueCrawlerOperator(
+        task_id='glue_crawler_curated',
+        config={"Name": "CrawlerETLAWSVini"},
+        aws_conn_id='aws',
+        poll_interval=10
+    )
+
     for file in csv_files:
         task_csv_to_parquet = add_spark_step(
             dag,
             CSV_TO_PARQUET_ARGS,
             f'{file}',
+            f'csv_to_parquet_{file}',
             params={
-                'file': file, 
+                'file': f'AdventureWorks_{file}', 
                 'format_source': 'csv', 
                 'format_target': 'parquet'
             }
@@ -283,8 +461,23 @@ with DAG(
             dag=dag
         )
 
+    #for bucket in buckets:
+    #    delete_buckets = S3DeleteBucketOperator(
+    #        task_id=f'delete_bucket_{bucket}',
+    #        bucket_name=bucket,
+    #        force_delete=True,
+    #        aws_conn_id='aws'
+    #    )
+
         (
             verify_csv_files_on_s3 >> create_emr_cluster >> 
             
-            emr_create_sensor >> task_csv_to_parquet >> step_checker >> terminate_emr_cluster
+            emr_create_sensor >> task_csv_to_parquet >> step_checker >> 
+            
+            task_send_to_curated >> step_checker_curated >>
+            
+            [terminate_emr_cluster, glue_crawler, create_schema_redshift, write_data_on_postgres] #>>
+
+            #delete_buckets
         )
+    
