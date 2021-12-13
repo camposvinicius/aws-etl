@@ -18,7 +18,6 @@ resource "aws_db_instance" "vinipostgresql-instance" {
 
 resource "aws_security_group" "vinipostgresql" {
   vpc_id = aws_vpc.redshift_vpc.id
-  name   = "vinipostgresql"
 
   ingress {
     from_port = 0
