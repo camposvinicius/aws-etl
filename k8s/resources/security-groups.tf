@@ -59,6 +59,10 @@ resource "aws_security_group" "vinipostgresql" {
     protocol  = "tcp"
   }
 
+  tags = {
+    tag-key = "sg-postgresql"
+  }
+
   depends_on = [
     data.aws_vpc.postgres
   ]
