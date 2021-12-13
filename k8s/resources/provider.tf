@@ -29,6 +29,6 @@ provider "redshift" {
   password = data.aws_redshift_cluster.default.master_password
 
   temporary_credentials {
-    cluster_identifier = data.aws_redshift_cluster.default.cluster_identifier
+    cluster_identifier = data.aws_redshift_cluster.default.master_password
   }
 }

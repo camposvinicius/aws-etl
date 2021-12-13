@@ -151,3 +151,7 @@ resource "redshift_schema" "schema" {
     aws_redshift_cluster.default
   ]
 }
+
+data "aws_redshift_cluster" "default" {
+  cluster_identifier = aws_redshift_cluster.default.cluster_identifier
+}
