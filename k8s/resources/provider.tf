@@ -26,9 +26,5 @@ provider "kubectl" {
 provider "redshift" {
   host     = data.aws_redshift_cluster.default.endpoint
   username = data.aws_redshift_cluster.default.master_username
-  password = "Etl-vini-aws-1"
-
-  temporary_credentials {
-    cluster_identifier = data.aws_redshift_cluster.default.cluster_identifier
-  }
+  password = var.redshift_pass
 }
