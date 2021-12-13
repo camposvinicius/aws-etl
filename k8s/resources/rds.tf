@@ -38,4 +38,3 @@ resource "aws_db_instance" "vinipostgresql-instance" {
     tag-key = "vini-cluster-postgres-etl-aws"
   }
 }
-
