@@ -54,8 +54,8 @@ resource "aws_security_group" "vinipostgresql" {
   name   = "vinipostgresql"
 
   ingress {
-    from_port   = 0
-    to_port     = 5432
-    protocol    = "tcp"
+    from_port = 0
+    to_port   = 5432
+    protocol  = "tcp"
   }
 }

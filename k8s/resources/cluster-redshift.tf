@@ -19,9 +19,9 @@ resource "aws_default_security_group" "redshift_security_group" {
   vpc_id = aws_vpc.redshift_vpc.id
 
   ingress {
-    from_port   = 0
-    to_port     = 5439
-    protocol    = "tcp"
+    from_port = 0
+    to_port   = 5439
+    protocol  = "tcp"
   }
 
   tags = {
@@ -140,18 +140,4 @@ resource "aws_redshift_cluster" "default" {
     aws_redshift_subnet_group.redshift_subnet_group,
     aws_iam_role.redshift_role
   ]
-}
-
-resource "redshift_schema" "schema" {
-  name  = "vini_etl_aws_redshift_schema"
-  owner = "vini"
-  quota = 150
-
-  depends_on = [
-    aws_redshift_cluster.default
-  ]
-}
-
-data "aws_redshift_cluster" "default" {
-  cluster_identifier = aws_redshift_cluster.default.cluster_identifier
 }
