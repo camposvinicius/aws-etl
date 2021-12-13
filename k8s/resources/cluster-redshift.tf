@@ -121,7 +121,7 @@ resource "aws_iam_role" "redshift_role" {
 
 resource "aws_redshift_cluster" "default" {
   cluster_identifier  = "redshift-cluster-etl-vini"
-  database_name       = "etlvini"
+  database_name       = var.redshift_db
   master_username     = var.redshift_user
   master_password     = var.redshift_pass
   node_type           = "dc2.large"
