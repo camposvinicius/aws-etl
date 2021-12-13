@@ -22,10 +22,3 @@ provider "kubectl" {
   token                  = data.aws_eks_cluster_auth.cluster.token
   load_config_file       = false
 }
-
-provider "redshift" {
-  host     = data.aws_redshift_cluster.default.endpoint
-  database = var.redshift_db
-  username = var.redshift_user
-  password = var.redshift_pass
-}
