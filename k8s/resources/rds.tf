@@ -36,6 +36,9 @@ resource "aws_security_group_rule" "ingress_all" {
   protocol          = "tcp"
   security_group_id = aws_security_group.vinipostgresql.id
 
+  cidr_blocks       = [data.aws_vpc.default.cidr_block]
+  ipv6_cidr_blocks  = [data.aws_vpc.default.ipv6_cidr_block]
+
   depends_on = [
     aws_security_group.vinipostgresql
   ]
