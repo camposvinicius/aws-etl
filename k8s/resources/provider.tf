@@ -22,3 +22,9 @@ provider "kubectl" {
   token                  = data.aws_eks_cluster_auth.cluster.token
   load_config_file       = false
 }
+
+provider "redshift" {
+  host     = aws_redshift_cluster.default.endpoint
+  username = aws_redshift_cluster.default.master_username
+  password = aws_redshift_cluster.default.master_password
+}
