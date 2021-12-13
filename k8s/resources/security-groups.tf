@@ -57,7 +57,6 @@ resource "aws_security_group" "vinipostgresql" {
     from_port = 0
     to_port   = 0
     protocol  = "all"
-    cdir = "0.0.0.0/0"
   }
 
   tags = {
