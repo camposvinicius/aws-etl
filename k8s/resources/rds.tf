@@ -7,7 +7,7 @@ resource "aws_db_instance" "vinipostgresql-instance" {
   engine_version         = "12.5"
   skip_final_snapshot    = true
   publicly_accessible    = true
-  vpc_security_group_ids = [data.aws_vpc.postgres.id]
+  vpc_security_group_ids = [aws_security_group.vinipostgresql.id]
   username               = var.postgres_user
   password               = var.postgres_user
 
