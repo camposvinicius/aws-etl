@@ -14,11 +14,6 @@ module "eks" {
     root_volume_type = "gp2"
   }
 
-  cluster_endpoint_private_access = true
-  cluster_endpoint_public_access  = true
-
-  manage_aws_auth = true
-
   worker_groups = [
     {
       name                          = "worker-group-1"
