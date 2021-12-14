@@ -14,6 +14,9 @@ module "eks" {
     root_volume_type = "gp2"
   }
 
+  cluster_endpoint_private_access = true
+  cluster_endpoint_public_access  = true
+
   worker_groups = [
     {
       name                          = "worker-group-1"
@@ -36,57 +39,4 @@ data "aws_eks_cluster" "cluster" {
 
 data "aws_eks_cluster_auth" "cluster" {
   name = module.eks.cluster_id
-}
-
-resource "aws_iam_role_policy_attachment" "workers_autoscaling" {
-  policy_arn = aws_iam_policy.worker_autoscaling.arn
-  role       = module.eks.worker_iam_role_name
-}
-
-resource "aws_iam_policy" "worker_autoscaling" {
-  name_prefix = "eks-worker-autoscaling-${module.eks.cluster_id}"
-  description = "EKS worker node autoscaling policy for cluster ${module.eks.cluster_id}"
-  policy      = data.aws_iam_policy_document.worker_autoscaling.json
-}
-
-data "aws_iam_policy_document" "worker_autoscaling" {
-  statement {
-    sid    = "eksWorkerAutoscalingAll"
-    effect = "Allow"
-
-    actions = [
-      "autoscaling:DescribeAutoScalingGroups",
-      "autoscaling:DescribeAutoScalingInstances",
-      "autoscaling:DescribeLaunchConfigurations",
-      "autoscaling:DescribeTags",
-      "ec2:DescribeLaunchTemplateVersions",
-    ]
-
-    resources = ["*"]
-  }
-
-  statement {
-    sid    = "eksWorkerAutoscalingOwn"
-    effect = "Allow"
-
-    actions = [
-      "autoscaling:SetDesiredCapacity",
-      "autoscaling:TerminateInstanceInAutoScalingGroup",
-      "autoscaling:UpdateAutoScalingGroup",
-    ]
-
-    resources = ["*"]
-
-    condition {
-      test     = "StringEquals"
-      variable = "autoscaling:ResourceTag/kubernetes.io/cluster/${module.eks.cluster_id}"
-      values   = ["owned"]
-    }
-
-    condition {
-      test     = "StringEquals"
-      variable = "autoscaling:ResourceTag/k8s.io/cluster-autoscaler/enabled"
-      values   = ["true"]
-    }
-  }
 }
