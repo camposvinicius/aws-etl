@@ -80,13 +80,13 @@ module "eks" {
   worker_groups = [
     {
       name                          = "worker-group-1"
-      instance_type                 = "t2.xlarge"
-      asg_desired_capacity          = 2
+      instance_type                 = "m5.2xlarge"
+      asg_desired_capacity          = 1
       additional_security_group_ids = [aws_security_group.worker_group_mgmt_one.id]
     },
     {
       name                          = "worker-group-2"
-      instance_type                 = "t2.large"
+      instance_type                 = "m5.xlarge"
       asg_desired_capacity          = 1
       additional_security_group_ids = [aws_security_group.worker_group_mgmt_two.id]
     },
