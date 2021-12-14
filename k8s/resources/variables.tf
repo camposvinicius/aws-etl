@@ -24,3 +24,6 @@ variable "postgres_user" {
 variable "postgres_pass" {
   default = "vinietlaws"
 }
+variable "email" {
+  default = "test.vini.etl.aws@gmail.com"
+}
