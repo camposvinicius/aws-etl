@@ -1,15 +1,15 @@
 resource "aws_sns_topic" "mysns" {
-    name = "send-email"
+  name = "send-email"
 }
 
 resource "aws_sns_topic_subscription" "send-email" {
-    topic_arn = aws_sns_topic.mysns.arn
-    protocol = "email"
-    endpoint = var.email
+  topic_arn = aws_sns_topic.mysns.arn
+  protocol  = "email"
+  endpoint  = var.email
 
-    depends_on = [
-      aws_sns_topic.mysns
-    ]
+  depends_on = [
+    aws_sns_topic.mysns
+  ]
 }
 
 data "aws_iam_policy_document" "sns_topic_policy" {
