@@ -433,7 +433,6 @@ with DAG(
                 count(*)
             FROM
                 {POSTGRESQL_TABLE}
-            );
         """,
         postgres_conn_id='postgres',
         database=POSTGRES_DATABASE
