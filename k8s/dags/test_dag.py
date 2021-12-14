@@ -275,6 +275,14 @@ def on_failure_callback(context):
     )
 
     task_sns.execute()
+
+def return_athena_results():
+    client = boto3.client('athena',
+        aws_access_key_id=AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+        region_name=REGION)
+    response = client.get_query_results(QueryExecutionId="{{ task_instance.xcom_pull(task_ids='athena_verify_table_count', key='return_value') }}", MaxResults=100)
+    return response['ResultSet']['Rows']
 ################################### TASKS #####################################################
 
 default_args = {
@@ -465,10 +473,17 @@ with DAG(
     athena_query_sensor = AthenaSensor(
         task_id='athena_query_sensor',
         query_execution_id="{{ task_instance.xcom_pull(task_ids='athena_verify_table_count', key='return_value') }}",
+        success_states = ['SUCCEEDED'],
+        failure_states = ['FAILED', 'CANCELLED'],
         aws_conn_id='aws'
     )
 
-    glue_crawler >> athena_verify_table_count >> athena_query_sensor
+    see_results_athena = PythonOperator(
+        task_id='see_results_athena',
+        python_callable=return_athena_results
+    )
+
+    glue_crawler >> athena_verify_table_count >> athena_query_sensor >> see_results_athena
 
     for bucket in buckets:
         create_buckets = S3CreateBucketOperator(
