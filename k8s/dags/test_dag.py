@@ -478,7 +478,8 @@ with DAG(
 
     see_results_athena = PythonOperator(
         task_id='see_results_athena',
-        python_callable=return_athena_results
+        python_callable=return_athena_results,
+        provide_context=True
     )
 
     glue_crawler >> athena_verify_table_count >> athena_query_sensor >> see_results_athena
