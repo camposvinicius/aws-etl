@@ -12,3 +12,7 @@ variable "redshift_user" {
 variable "redshift_pass" {
   default = "Etl-vini-aws-1"
 }
+
+variable "email" {
+  default = "test_vinietlaws_test@gmail.com"
+}
