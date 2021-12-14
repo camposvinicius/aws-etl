@@ -435,7 +435,7 @@ with DAG(
                 {POSTGRESQL_TABLE}
         """,
         database=POSTGRES_DATABASE,
-        do_xcom_push=True,
+        autocommit=True,
         postgres_conn_id='postgres'
     )
 
