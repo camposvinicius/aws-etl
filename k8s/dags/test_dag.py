@@ -29,6 +29,9 @@ from airflow.providers.amazon.aws.operators.redshift import RedshiftSQLOperator
 from airflow.providers.amazon.aws.transfers.s3_to_redshift import S3ToRedshiftOperator
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.providers.amazon.aws.operators.glue_crawler import AwsGlueCrawlerOperator
+from airflow.providers.amazon.aws.operators.athena import AWSAthenaOperator
+from airflow.providers.amazon.aws.sensors.athena import AthenaSensor
+from airflow.providers.amazon.aws.operators.sns import SnsPublishOperator
 
 ################################### VARIABLES ###########################################################
 
@@ -45,6 +48,10 @@ CURATED_KEY = getenv('CURATED_KEY', 'curated/')
 REDSHIFT_USER = getenv("REDSHIFT_USER", "vini")
 REDSHIFT_SCHEMA = getenv("REDSHIFT_SCHEMA", "vini_etl_aws_redshift_schema")
 REDSHIFT_TABLE = getenv("REDSHIFT_TABLE", "vini_etl_aws_redshift_table")
+
+ATHENA_TABLE = getenv("ATHENA_TABLE", "curated")
+ATHENA_DATABASE = getenv("ATHENA_DATABASE", "vini-database-etl-aws")
+ATHENA_OUTPUT = getenv("ATHENA_OUTPUT", "s3://athena-results-vini-etl-aws/")
 
 POSTGRES_PASSWORD = Variable.get("POSTGRES_PASSWORD")
 POSTGRES_USERNAME = 'vinietlaws'
@@ -258,6 +265,16 @@ def write_on_postgres():
     engine = create_engine(POSTGRESQL_CONNECTION)
     df.to_sql(f'{POSTGRESQL_TABLE}', engine, schema='public', if_exists='replace', index=False)
 
+def on_failure_callback(context):
+    task_sns = SnsPublishOperator(
+        task_id='on_failure_callback',
+        target_arn='target_arn',
+        message="Dag Failed",
+        subject="Dag Failed",
+        aws_conn_id='aws'
+    )
+
+    task_sns.execute()
 ################################### TASKS #####################################################
 
 default_args = {
@@ -265,6 +282,7 @@ default_args = {
     'depends_on_past': False,
     'email_on_failure': False,
     'email_on_retry': False,
+    'on_failure_callback': on_failure_callback,
     'retries': 1
 }
 
@@ -273,6 +291,7 @@ with DAG(
     tags=['etl', 'aws', 'dataengineer'],
     default_args=default_args,
     start_date=days_ago(1),
+    on_failure_callback=on_failure_callback,
     schedule_interval='@daily',
     concurrency=10,
     max_active_runs=1,
@@ -296,15 +315,6 @@ with DAG(
         timeout=60,
         dag=dag
     )
-
-    for bucket in buckets:
-        create_buckets = S3CreateBucketOperator(
-            task_id=f'create_bucket_{bucket}'+f'_{AWS_PROJECT}',
-            bucket_name=bucket+f'-{AWS_PROJECT}',
-            region_name=REGION,
-            aws_conn_id='aws'
-        )
-        create_buckets >> task_lambda >> verify_csv_files_on_s3
 
     create_emr_cluster = EmrCreateJobFlowOperator(
         task_id="create_emr_cluster",
@@ -420,7 +430,7 @@ with DAG(
         task_id=f'verify_{POSTGRESQL_TABLE}_count',
         sql=f""" 
             SELECT 
-                *
+                count(*)
             FROM
                 {POSTGRESQL_TABLE}
             );
@@ -437,6 +447,46 @@ with DAG(
         aws_conn_id='aws',
         poll_interval=10
     )
+
+    athena_verify_table_count = AWSAthenaOperator(
+        task_id='athena_verify_table_count',
+        query=f""" 
+            SELECT 
+                count(*)
+            FROM
+                "{ATHENA_DATABASE}"."{ATHENA_TABLE}"
+        """,
+        database=f'{ATHENA_DATABASE}',
+        output_location=f'{ATHENA_OUTPUT}',
+        do_xcom_push=True,
+        aws_conn_id='aws'
+    )
+
+    athena_query_sensor = AthenaSensor(
+        task_id='athena_query_sensor',
+        query_execution_id="{{ task_instance.xcom_pull(task_ids='athena_verify_table_count', key='return_value') }}",
+        aws_conn_id='aws'
+    )
+
+    glue_crawler >> athena_verify_table_count >> athena_query_sensor
+
+    for bucket in buckets:
+        create_buckets = S3CreateBucketOperator(
+            task_id=f'create_bucket_{bucket}'+f'_{AWS_PROJECT}',
+            bucket_name=bucket+f'-{AWS_PROJECT}',
+            region_name=REGION,
+            aws_conn_id='aws'
+        )
+        create_buckets >> task_lambda >> verify_csv_files_on_s3
+
+        #delete_buckets = S3DeleteBucketOperator(
+        #    task_id=f'delete_bucket_{bucket}',
+        #    bucket_name=bucket,
+        #    force_delete=True,
+        #    aws_conn_id='aws'
+        #)
+
+        s3_to_redshift #>> delete_buckets
 
     for file in csv_files:
         task_csv_to_parquet = add_spark_step(
@@ -461,13 +511,6 @@ with DAG(
             dag=dag
         )
 
-    #for bucket in buckets:
-    #    delete_buckets = S3DeleteBucketOperator(
-    #        task_id=f'delete_bucket_{bucket}',
-    #        bucket_name=bucket,
-    #        force_delete=True,
-    #        aws_conn_id='aws'
-    #    )
 
         (
             verify_csv_files_on_s3 >> create_emr_cluster >> 
@@ -476,8 +519,5 @@ with DAG(
             
             task_send_to_curated >> step_checker_curated >>
             
-            [terminate_emr_cluster, glue_crawler, create_schema_redshift, write_data_on_postgres] #>>
-
-            #delete_buckets
+            [terminate_emr_cluster, glue_crawler, create_schema_redshift, write_data_on_postgres]
         )
-    
