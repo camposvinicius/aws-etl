@@ -67,8 +67,6 @@ module "eks" {
   cluster_version = "1.21"
   subnets         = module.vpc.private_subnets
 
-  token = data.aws_eks_cluster_auth.cluster.token
-
   tags = {
     Vini = "ETL-AWS"
   }
