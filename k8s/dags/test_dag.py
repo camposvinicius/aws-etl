@@ -434,8 +434,9 @@ with DAG(
             FROM
                 {POSTGRESQL_TABLE}
         """,
-        postgres_conn_id='postgres',
-        database=POSTGRES_DATABASE
+        database=POSTGRES_DATABASE,
+        xcom_push=True,
+        postgres_conn_id='postgres'
     )
 
     write_data_on_postgres >> verify_table_count
