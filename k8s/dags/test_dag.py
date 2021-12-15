@@ -515,8 +515,8 @@ with DAG(
         create_buckets >> task_lambda >> verify_csv_files_on_s3
 
         delete_buckets = S3DeleteBucketOperator(
-            task_id=f'delete_bucket_{bucket}',
-            bucket_name=bucket,
+            task_id=f'delete_bucket_{bucket}'+f'_{AWS_PROJECT}',
+            bucket_name=bucket+f'-{AWS_PROJECT}',
             force_delete=True,
             aws_conn_id='aws'
         )
