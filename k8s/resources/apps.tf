@@ -43,6 +43,10 @@ resource "kubectl_manifest" "airflow" {
 
 data "kubectl_file_documents" "keys" {
   content = file("../secrets/keys.yml")
+
+  depends_on = [
+    kubectl_manifest.airflow
+  ]
 }
 
 resource "kubectl_manifest" "keys" {
