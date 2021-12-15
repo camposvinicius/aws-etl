@@ -172,7 +172,16 @@ airflow:
   ##     - key: "var_2"
   ##       value: "my_value_2"
   ##
-  variables: []
+  variables:
+    - key: AWS_ACCESS_KEY_ID
+      value: "${AWS_ACCESS_KEY_ID}"
+
+    - key: AWS_SECRET_ACCESS_KEY
+      value: "${AWS_ACCESS_KEY_ID}"
+
+    - key: POSTGRES_PASSWORD
+      value: "${POSTGRES_PASSWORD}"
+
 
   ## bash-like templates to be used in `airflow.variables`
   ## - see docs for `airflow.usersTemplates`
@@ -251,26 +260,26 @@ airflow:
   ##   https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#envvar-v1-core
   ##
   extraEnv:
-    - name: AWS_ACCESS_KEY_ID
-      valueFrom:
-        secretKeyRef:
-          name: aws-credentials
-          key: aws_access_key_id
-    - name: AWS_SECRET_ACCESS_KEY
-      valueFrom:
-        secretKeyRef:
-          name: aws-credentials
-          key: aws_secret_access_key
-    - name: REDSHIFT_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: redshift-credentials
-          key: redshift_password
-    - name: POSTGRES_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: postgres-credentials
-          key: postgres_password
+  #  - name: AWS_ACCESS_KEY_ID
+  #    valueFrom:
+  #      secretKeyRef:
+  #        name: aws-credentials
+  #        key: aws_access_key_id
+  #  - name: AWS_SECRET_ACCESS_KEY
+  #    valueFrom:
+  #      secretKeyRef:
+  #        name: aws-credentials
+  #        key: aws_secret_access_key
+  #  - name: REDSHIFT_PASSWORD
+  #    valueFrom:
+  #      secretKeyRef:
+  #        name: redshift-credentials
+  #        key: redshift_password
+  #  - name: POSTGRES_PASSWORD
+  #    valueFrom:
+  #      secretKeyRef:
+  #        name: postgres-credentials
+  #        key: postgres_password
 
   ## extra containers for the airflow Pods
   ## - spec for Container:
