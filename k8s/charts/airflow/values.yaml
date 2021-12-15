@@ -173,13 +173,13 @@ airflow:
   ##       value: "my_value_2"
   ##
   variables:
-    - key: AWS_ACCESS_KEY_ID
+    - key: "AWS_ACCESS_KEY_ID"
       value: "${AWS_ACCESS_KEY_ID}"
 
-    - key: AWS_SECRET_ACCESS_KEY
+    - key: "AWS_SECRET_ACCESS_KEY"
       value: "${AWS_ACCESS_KEY_ID}"
 
-    - key: POSTGRES_PASSWORD
+    - key: "POSTGRES_PASSWORD"
       value: "${POSTGRES_PASSWORD}"
 
 
