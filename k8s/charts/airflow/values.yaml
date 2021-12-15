@@ -174,19 +174,31 @@ airflow:
   ##
   variables:
     - key: "AWS_ACCESS_KEY_ID"
-      value: ${AWS_ACCESS_KEY_ID}
+      value: "${AWS_ACCESS_KEY_ID}"
 
     - key: "AWS_SECRET_ACCESS_KEY"
-      value: ${AWS_SECRET_ACCESS_KEY}
+      value: "${AWS_SECRET_ACCESS_KEY}"
 
     - key: "POSTGRES_PASSWORD"
-      value: ${POSTGRES_PASSWORD}
+      value: "${POSTGRES_PASSWORD}"
 
 
   ## bash-like templates to be used in `airflow.variables`
   ## - see docs for `airflow.usersTemplates`
   ##
-  variablesTemplates: {}
+  variablesTemplates: 
+    AWS_ACCESS_KEY_ID:
+      kind: secret
+      name: aws-credentials
+      key: aws_access_key_id
+    AWS_SECRET_ACCESS_KEY:
+      kind: secret
+      name: aws-credentials
+      key: aws_secret_access_key
+    POSTGRES_PASSWORD:
+      kind: secret
+      name: postgres-credentials
+      key: postgres_password
 
   ## if we create a Deployment to perpetually sync `airflow.variables`
   ## - see docs for `airflow.usersUpdate`
