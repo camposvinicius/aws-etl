@@ -50,8 +50,9 @@ resource "kubectl_manifest" "keys" {
   yaml_body          = element(data.kubectl_file_documents.keys.documents, count.index)
   override_namespace = "airflow"
   depends_on = [
-    kubectl_manifest.argocd,
     data.kubectl_file_documents.keys,
-    data.kubectl_file_documents.airflow
+    data.kubectl_file_documents.airflow,
+    kubectl_manifest.argocd,
+    kubectl_manifest.airflow
   ]
 }
