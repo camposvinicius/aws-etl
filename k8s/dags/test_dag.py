@@ -269,7 +269,7 @@ def write_on_postgres():
 def on_failure_callback(context):
     task_sns = SnsPublishOperator(
         task_id='on_failure_callback',
-        target_arn='target_arn',
+        target_arn='send-email',
         message="Dag Failed",
         subject="Dag Failed",
         aws_conn_id='aws'
