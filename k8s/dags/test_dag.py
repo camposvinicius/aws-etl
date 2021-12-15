@@ -14,6 +14,7 @@ from airflow.utils.dates import days_ago
 ################################### OPERATORS ###########################################################
 
 from airflow.operators.python import PythonOperator
+from airflow.operators.dummy import DummyOperator
 
 from airflow.providers.amazon.aws.operators.s3_bucket import (
     S3CreateBucketOperator, 
@@ -27,7 +28,7 @@ from airflow.contrib.operators.emr_add_steps_operator import EmrAddStepsOperator
 from airflow.providers.amazon.aws.sensors.emr_step import EmrStepSensor
 from airflow.providers.amazon.aws.operators.redshift import RedshiftSQLOperator
 from airflow.providers.amazon.aws.transfers.s3_to_redshift import S3ToRedshiftOperator
-from airflow.providers.postgres.operators.postgres import PostgresOperator
+from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.providers.amazon.aws.operators.glue_crawler import AwsGlueCrawlerOperator
 from airflow.providers.amazon.aws.operators.athena import AWSAthenaOperator
 from airflow.providers.amazon.aws.sensors.athena import AthenaSensor
@@ -276,13 +277,37 @@ def on_failure_callback(context):
 
     task_sns.execute()
 
-def return_athena_results():
+def return_athena_results(**kwargs):
+
     client = boto3.client('athena',
         aws_access_key_id=AWS_ACCESS_KEY_ID,
         aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-        region_name=REGION)
-    response = client.get_query_results(QueryExecutionId="{{ task_instance.xcom_pull(task_ids='athena_verify_table_count', key='return_value') }}", MaxResults=100)
+        region_name=REGION
+    )
+
+    ti = kwargs['ti']
+
+    query_execution_id = ti.xcom_pull(task_ids='athena_verify_table_count', key='return_value')
+
+    response = client.get_query_results(QueryExecutionId=str(query_execution_id), MaxResults=100)
+
     return response['ResultSet']['Rows']
+
+def get_records_postgres(**kwargs):
+
+    pg_hook = PostgresHook(postgres_conn_id="postgres", schema=f"{POSTGRES_DATABASE}")
+    connection = pg_hook.get_conn()
+    cursor = connection.cursor()
+    sql = f"SELECT count(*) as qt FROM {POSTGRESQL_TABLE}"
+    cursor.execute(sql)
+    result = cursor.fetchone()
+    result = list(result)[0]
+
+    ti = kwargs['ti']    
+    ti.xcom_push(key='get_records_postgres', value=f'{result}')
+
+    print(f"The count value is {result} rows.")
+
 ################################### TASKS #####################################################
 
 default_args = {
@@ -310,6 +335,10 @@ with DAG(
         task_id='trigger_lambda',
         python_callable=trigger_lambda,
         execution_timeout=timedelta(seconds=120)
+    )
+
+    task_dummy = DummyOperator(
+        task_id='task_dummy'
     )
 
     verify_csv_files_on_s3 = S3KeySensor(
@@ -347,6 +376,8 @@ with DAG(
         trigger_rule="all_done",
         aws_conn_id="aws"
     )
+
+    terminate_emr_cluster >> task_dummy
 
     task_send_to_curated = add_spark_step(
         dag,
@@ -427,27 +458,19 @@ with DAG(
         copy_options=['parquet']
     )
 
-    create_schema_redshift >> create_table_redshift >> s3_to_redshift
+    create_schema_redshift >> create_table_redshift >> s3_to_redshift >> task_dummy
 
     write_data_on_postgres = PythonOperator(
         task_id='write_data_on_postgres',
         python_callable=write_on_postgres
     )
 
-    verify_table_count = PostgresOperator(
+    verify_table_count = PythonOperator(
         task_id=f'verify_{POSTGRESQL_TABLE}_count',
-        sql=f""" 
-            SELECT 
-                count(*)
-            FROM
-                {POSTGRESQL_TABLE}
-        """,
-        database=POSTGRES_DATABASE,
-        autocommit=True,
-        postgres_conn_id='postgres'
+        python_callable=get_records_postgres
     )
 
-    write_data_on_postgres >> verify_table_count
+    write_data_on_postgres >> verify_table_count >> task_dummy
 
     glue_crawler = AwsGlueCrawlerOperator(
         task_id='glue_crawler_curated',
@@ -482,7 +505,7 @@ with DAG(
         provide_context=True
     )
 
-    glue_crawler >> athena_verify_table_count >> athena_query_sensor >> see_results_athena
+    glue_crawler >> athena_verify_table_count >> athena_query_sensor >> see_results_athena >> task_dummy
 
     for bucket in buckets:
         create_buckets = S3CreateBucketOperator(
@@ -493,14 +516,14 @@ with DAG(
         )
         create_buckets >> task_lambda >> verify_csv_files_on_s3
 
-        #delete_buckets = S3DeleteBucketOperator(
-        #    task_id=f'delete_bucket_{bucket}',
-        #    bucket_name=bucket,
-        #    force_delete=True,
-        #    aws_conn_id='aws'
-        #)
+        delete_buckets = S3DeleteBucketOperator(
+            task_id=f'delete_bucket_{bucket}',
+            bucket_name=bucket,
+            force_delete=True,
+            aws_conn_id='aws'
+        )
 
-        s3_to_redshift #>> delete_buckets
+        task_dummy >> delete_buckets
 
     for file in csv_files:
         task_csv_to_parquet = add_spark_step(
