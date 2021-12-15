@@ -65,9 +65,9 @@ POSTGRESQL_CONNECTION = f'postgresql://{POSTGRES_USERNAME}:{POSTGRES_PASSWORD}@{
 
 EMR_CODE_PATH = 's3://emr-code-zone-vini-etl-aws'
 
-################################### SPARK_CLUSTER_CONFIG ################################################
+################################### EMR_CLUSTER_CONFIG ################################################
 
-JOB_FLOW_OVERRIDES = {
+EMR_CONFIG = {
     'Name': 'ETL-VINI-AWS',
     "ReleaseLabel": "emr-6.5.0",
     "Applications": [{"Name": "Hadoop"}, {"Name": "Spark"}], 
@@ -187,6 +187,65 @@ buckets = [
     'curated-zone'
 ]
 
+################################### SQLs #################################################################
+
+sql_create_schema_redsfhit = f"""
+    CREATE SCHEMA IF NOT EXISTS {REDSHIFT_SCHEMA} AUTHORIZATION {REDSHIFT_USER} QUOTA 2048 MB;
+"""
+
+sql_create_table_redshiftt = f""" 
+    CREATE TABLE IF NOT EXISTS {REDSHIFT_SCHEMA}.{REDSHIFT_TABLE} (
+        OrderDate date,
+        StockDate date,
+        CustomerKey int,
+        TerritoryKey int,
+        OrderLineItem int,
+        OrderQuantity int,
+        Prefix varchar,
+        FirstName varchar,
+        LastName varchar,
+        BirthDate date,
+        MaritalStatus varchar,
+        Gender varchar,
+        EmailAddress varchar,
+        AnnualIncome decimal(10,2),
+        TotalChildren int,
+        EducationLevel varchar,
+        Occupation varchar,
+        HomeOwner varchar,
+        ProductKey int,
+        ProductSubcategoryKey int,
+        SubcategoryName varchar,
+        ProductCategoryKey int,
+        CategoryName varchar,
+        ProductSKU varchar,
+        ProductName varchar,
+        ModelName varchar,
+        ProductDescription varchar,
+        ProductColor varchar,
+        ProductSize int,
+        ProductStyle varchar,
+        ProductCost decimal(10,2),
+        ProductPrice decimal(10,2),
+        ReturnDate date,
+        ReturnQuantity int
+    );
+"""
+
+sql_query_athena = f""" 
+    SELECT 
+        count(*)
+    FROM
+        "{ATHENA_DATABASE}"."{ATHENA_TABLE}"
+"""
+
+sql_query_postgres = f""" 
+    SELECT 
+        count(*) as qt 
+    FROM 
+        {POSTGRESQL_TABLE}
+"""
+
 ################################### FUNCTIONS ###########################################################
 
 def trigger_lambda():
@@ -298,7 +357,7 @@ def get_records_postgres(**kwargs):
     pg_hook = PostgresHook(postgres_conn_id="postgres", schema=f"{POSTGRES_DATABASE}")
     connection = pg_hook.get_conn()
     cursor = connection.cursor()
-    sql = f"SELECT count(*) as qt FROM {POSTGRESQL_TABLE}"
+    sql = sql_query_postgres
     cursor.execute(sql)
     result = cursor.fetchone()
     result = list(result)[0]
@@ -313,8 +372,6 @@ def get_records_postgres(**kwargs):
 default_args = {
     'owner': 'Vini Campos',
     'depends_on_past': False,
-    'email_on_failure': False,
-    'email_on_retry': False,
     'on_failure_callback': on_failure_callback,
     'retries': 1
 }
@@ -331,10 +388,16 @@ with DAG(
     catchup=False
 ) as dag:
 
+   # GENERAL TASKS AND RELATED #
+
     task_lambda = PythonOperator(
         task_id='trigger_lambda',
         python_callable=trigger_lambda,
         execution_timeout=timedelta(seconds=120)
+    )
+
+    task_dummy = DummyOperator(
+        task_id='task_dummy'
     )
 
     verify_csv_files_on_s3 = S3KeySensor(
@@ -348,9 +411,11 @@ with DAG(
         timeout=60
     )
 
+    # EMR TASKS AND RELATED 1 #
+
     create_emr_cluster = EmrCreateJobFlowOperator(
         task_id="create_emr_cluster",
-        job_flow_overrides=JOB_FLOW_OVERRIDES,
+        job_flow_overrides=EMR_CONFIG,
         aws_conn_id="aws",
         emr_conn_id="emr",
         region_name=REGION
@@ -371,10 +436,6 @@ with DAG(
         aws_conn_id="aws"
     )
 
-    task_dummy = DummyOperator(
-        task_id='task_dummy'
-    )
-
     task_send_to_curated = add_spark_step(
         dag,
         SEND_TO_CURATED,
@@ -392,54 +453,17 @@ with DAG(
         dag=dag
     )
 
+    # REDSHIFT TASKS AND RELATED #
+
     create_schema_redshift = RedshiftSQLOperator(
         task_id='create_schema_redshift',
-        sql=f"""
-            CREATE SCHEMA IF NOT EXISTS {REDSHIFT_SCHEMA} AUTHORIZATION {REDSHIFT_USER} QUOTA 2048 MB;
-        """,
+        sql=sql_create_schema_redsfhit,
         redshift_conn_id='redshift'
     )
 
     create_table_redshift = RedshiftSQLOperator(
         task_id='create_table_redshift',
-        sql=f""" 
-            CREATE TABLE IF NOT EXISTS {REDSHIFT_SCHEMA}.{REDSHIFT_TABLE} (
-                OrderDate date,
-                StockDate date,
-                CustomerKey int,
-                TerritoryKey int,
-                OrderLineItem int,
-                OrderQuantity int,
-                Prefix varchar,
-                FirstName varchar,
-                LastName varchar,
-                BirthDate date,
-                MaritalStatus varchar,
-                Gender varchar,
-                EmailAddress varchar,
-                AnnualIncome decimal(10,2),
-                TotalChildren int,
-                EducationLevel varchar,
-                Occupation varchar,
-                HomeOwner varchar,
-                ProductKey int,
-                ProductSubcategoryKey int,
-                SubcategoryName varchar,
-                ProductCategoryKey int,
-                CategoryName varchar,
-                ProductSKU varchar,
-                ProductName varchar,
-                ModelName varchar,
-                ProductDescription varchar,
-                ProductColor varchar,
-                ProductSize int,
-                ProductStyle varchar,
-                ProductCost decimal(10,2),
-                ProductPrice decimal(10,2),
-                ReturnDate date,
-                ReturnQuantity int
-            );
-        """,
+        sql=sql_create_table_redshiftt,
         redshift_conn_id='redshift'
     )
 
@@ -454,6 +478,8 @@ with DAG(
         copy_options=['parquet']
     )
 
+    # POSTGRES TASKS AND RELATED #
+
     write_data_on_postgres = PythonOperator(
         task_id='write_data_on_postgres',
         python_callable=write_on_postgres
@@ -464,6 +490,8 @@ with DAG(
         python_callable=get_records_postgres
     )
 
+    # ATHENA TASKS AND RELATED #
+
     glue_crawler = AwsGlueCrawlerOperator(
         task_id='glue_crawler_curated',
         config={"Name": "CrawlerETLAWSVini"},
@@ -473,12 +501,7 @@ with DAG(
 
     athena_verify_table_count = AWSAthenaOperator(
         task_id='athena_verify_table_count',
-        query=f""" 
-            SELECT 
-                count(*)
-            FROM
-                "{ATHENA_DATABASE}"."{ATHENA_TABLE}"
-        """,
+        query=sql_query_athena,
         database=f'{ATHENA_DATABASE}',
         output_location=f'{ATHENA_OUTPUT}',
         do_xcom_push=True,
@@ -497,14 +520,21 @@ with DAG(
         provide_context=True
     )
 
-    create_schema_redshift >> create_table_redshift >> s3_to_redshift >> task_dummy
+    # WORKFLOW DEPENDENCIES #
 
-    write_data_on_postgres >> verify_table_count >> task_dummy
+    [ 
+        create_schema_redshift >> create_table_redshift >> s3_to_redshift,
 
-    terminate_emr_cluster >> task_dummy
+        write_data_on_postgres >> verify_table_count,
+
+        terminate_emr_cluster,
  
-    glue_crawler >> athena_verify_table_count >> athena_query_sensor >> see_results_athena >> task_dummy
+        glue_crawler >> athena_verify_table_count >> athena_query_sensor >> see_results_athena
+    
+    ]                >> task_dummy
 
+    # s3 TASKS AND RELATED #
+    
     for bucket in buckets:
         create_buckets = S3CreateBucketOperator(
             task_id=f'create_bucket_{bucket}'+f'_{AWS_PROJECT}',
@@ -512,6 +542,7 @@ with DAG(
             region_name=REGION,
             aws_conn_id='aws'
         )
+
         create_buckets >> task_lambda >> verify_csv_files_on_s3
 
         delete_buckets = S3DeleteBucketOperator(
@@ -523,6 +554,8 @@ with DAG(
 
         task_dummy >> delete_buckets
 
+    # EMR TASKS AND RELATED 2 #
+    
     for file in csv_files:
         task_csv_to_parquet = add_spark_step(
             dag,
@@ -546,6 +579,7 @@ with DAG(
             dag=dag
         )
 
+    # WORKFLOW #
 
         (
             verify_csv_files_on_s3 >> create_emr_cluster >> 
