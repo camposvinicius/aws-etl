@@ -90,7 +90,7 @@ JOB_FLOW_OVERRIDES = {
             {
                 "Name": "TASK_NODES",
                 "Market": "SPOT",
-                "BidPrice": "0.078",
+                "BidPrice": "0.088",
                 "InstanceRole": "TASK",
                 "InstanceType": "m5.xlarge",
                 "InstanceCount": 1,
@@ -168,7 +168,7 @@ SEND_TO_CURATED = [
     f'{EMR_CODE_PATH}/transformation.py'
 ]
 
-################################### LISTS #####################################################
+################################### LISTS ################################################################
 
 csv_files = [
   'Customers',
@@ -308,7 +308,7 @@ def get_records_postgres(**kwargs):
 
     print(f"The count value is {result} rows.")
 
-################################### TASKS #####################################################
+################################### TASKS ###############################################################
 
 default_args = {
     'owner': 'Vini Campos',
@@ -337,10 +337,6 @@ with DAG(
         execution_timeout=timedelta(seconds=120)
     )
 
-    task_dummy = DummyOperator(
-        task_id='task_dummy'
-    )
-
     verify_csv_files_on_s3 = S3KeySensor(
         task_id='verify_csv_files_on_s3',
         bucket_key='data/AdventureWorks/*.csv',
@@ -349,8 +345,7 @@ with DAG(
         aws_conn_id='aws',
         soft_fail=False,
         poke_interval=15,
-        timeout=60,
-        dag=dag
+        timeout=60
     )
 
     create_emr_cluster = EmrCreateJobFlowOperator(
@@ -358,8 +353,7 @@ with DAG(
         job_flow_overrides=JOB_FLOW_OVERRIDES,
         aws_conn_id="aws",
         emr_conn_id="emr",
-        region_name=REGION,
-        dag=dag,
+        region_name=REGION
     )
 
     emr_create_sensor = EmrJobFlowSensor(
@@ -377,7 +371,9 @@ with DAG(
         aws_conn_id="aws"
     )
 
-    terminate_emr_cluster >> task_dummy
+    task_dummy = DummyOperator(
+        task_id='task_dummy'
+    )
 
     task_send_to_curated = add_spark_step(
         dag,
@@ -458,8 +454,6 @@ with DAG(
         copy_options=['parquet']
     )
 
-    create_schema_redshift >> create_table_redshift >> s3_to_redshift >> task_dummy
-
     write_data_on_postgres = PythonOperator(
         task_id='write_data_on_postgres',
         python_callable=write_on_postgres
@@ -469,8 +463,6 @@ with DAG(
         task_id=f'verify_{POSTGRESQL_TABLE}_count',
         python_callable=get_records_postgres
     )
-
-    write_data_on_postgres >> verify_table_count >> task_dummy
 
     glue_crawler = AwsGlueCrawlerOperator(
         task_id='glue_crawler_curated',
@@ -505,6 +497,12 @@ with DAG(
         provide_context=True
     )
 
+    create_schema_redshift >> create_table_redshift >> s3_to_redshift >> task_dummy
+
+    write_data_on_postgres >> verify_table_count >> task_dummy
+
+    terminate_emr_cluster >> task_dummy
+ 
     glue_crawler >> athena_verify_table_count >> athena_query_sensor >> see_results_athena >> task_dummy
 
     for bucket in buckets:
