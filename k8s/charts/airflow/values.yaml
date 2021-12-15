@@ -153,7 +153,26 @@ airflow:
   ## bash-like templates to be used in `airflow.connections`
   ## - see docs for `airflow.usersTemplates`
   ##
-  connectionsTemplates: {}
+  connectionsTemplates:
+    AWS_ACCESS_KEY_ID:
+      kind: secret
+      name: aws-credentials
+      key: aws_access_key_id
+
+    AWS_SECRET_ACCESS_KEY:
+      kind: secret
+      name: aws-credentials
+      key: aws_secret_access_key
+
+    POSTGRES_PASSWORD:
+      kind: secret
+      name: postgres-credentials
+      key: postgres_password
+
+    REDSHIFT_PASSWORD:
+      kind: secret
+      name: redshift-credentials
+      key: redshift_password
 
   ## if we create a Deployment to perpetually sync `airflow.connections`
   ## - see docs for `airflow.usersUpdate`
@@ -186,15 +205,17 @@ airflow:
   ## bash-like templates to be used in `airflow.variables`
   ## - see docs for `airflow.usersTemplates`
   ##
-  variablesTemplates: 
+  variablesTemplates:
     AWS_ACCESS_KEY_ID:
       kind: secret
       name: aws-credentials
       key: aws_access_key_id
+
     AWS_SECRET_ACCESS_KEY:
       kind: secret
       name: aws-credentials
       key: aws_secret_access_key
+
     POSTGRES_PASSWORD:
       kind: secret
       name: postgres-credentials
@@ -271,27 +292,7 @@ airflow:
   ## - spec for EnvVar:
   ##   https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#envvar-v1-core
   ##
-  extraEnv:
-  #  - name: AWS_ACCESS_KEY_ID
-  #    valueFrom:
-  #      secretKeyRef:
-  #        name: aws-credentials
-  #        key: aws_access_key_id
-  #  - name: AWS_SECRET_ACCESS_KEY
-  #    valueFrom:
-  #      secretKeyRef:
-  #        name: aws-credentials
-  #        key: aws_secret_access_key
-  #  - name: REDSHIFT_PASSWORD
-  #    valueFrom:
-  #      secretKeyRef:
-  #        name: redshift-credentials
-  #        key: redshift_password
-  #  - name: POSTGRES_PASSWORD
-  #    valueFrom:
-  #      secretKeyRef:
-  #        name: postgres-credentials
-  #        key: postgres_password
+  extraEnv: []
 
   ## extra containers for the airflow Pods
   ## - spec for Container:
