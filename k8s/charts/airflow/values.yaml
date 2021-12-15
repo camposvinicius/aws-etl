@@ -174,13 +174,13 @@ airflow:
   ##
   variables:
     - key: "AWS_ACCESS_KEY_ID"
-      value: "${AWS_ACCESS_KEY_ID}"
+      value: ${AWS_ACCESS_KEY_ID}
 
     - key: "AWS_SECRET_ACCESS_KEY"
-      value: "${AWS_ACCESS_KEY_ID}"
+      value: ${AWS_SECRET_ACCESS_KEY}
 
     - key: "POSTGRES_PASSWORD"
-      value: "${POSTGRES_PASSWORD}"
+      value: ${POSTGRES_PASSWORD}
 
 
   ## bash-like templates to be used in `airflow.variables`
