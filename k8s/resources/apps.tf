@@ -26,20 +26,6 @@ resource "kubectl_manifest" "argocd" {
   ]
 }
 
-data "kubectl_file_documents" "keys" {
-  content = file("../secrets/keys.yml")
-}
-
-resource "kubectl_manifest" "keys" {
-  count              = length(data.kubectl_file_documents.keys.documents)
-  yaml_body          = element(data.kubectl_file_documents.keys.documents, count.index)
-  override_namespace = "argocd"
-  depends_on = [
-    kubectl_manifest.argocd,
-    data.kubectl_file_documents.keys
-  ]
-}
-
 data "kubectl_file_documents" "airflow" {
   content = file("../apps/airflow-app.yaml")
 }
@@ -50,8 +36,22 @@ resource "kubectl_manifest" "airflow" {
   override_namespace = "argocd"
   depends_on = [
     kubectl_manifest.argocd,
-    data.kubectl_file_documents.keys,
     data.kubectl_file_documents.airflow,
     module.eks
+  ]
+}
+
+data "kubectl_file_documents" "keys" {
+  content = file("../secrets/keys.yml")
+}
+
+resource "kubectl_manifest" "keys" {
+  count              = length(data.kubectl_file_documents.keys.documents)
+  yaml_body          = element(data.kubectl_file_documents.keys.documents, count.index)
+  override_namespace = "airflow"
+  depends_on = [
+    kubectl_manifest.argocd,
+    data.kubectl_file_documents.keys,
+    data.kubectl_file_documents.airflow
   ]
 }
