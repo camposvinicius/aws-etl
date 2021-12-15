@@ -115,7 +115,40 @@ airflow:
   ##           "aws_secret_access_key": "${AWS_ACCESS_KEY}",
   ##           "region_name":"eu-central-1" }
   ##
-  connections: []
+  connections: 
+    - id: aws
+      type: aws
+      description: AWS CONN
+      extra: |-
+        { 
+          "aws_access_key_id": "${AWS_ACCESS_KEY_ID}",
+          "aws_secret_access_key": "${AWS_ACCESS_KEY_ID}",
+          "region_name":"us-east-1" 
+        }
+
+    - id: emr
+      type: emr
+      description: EMR CONN
+      login: "${AWS_ACCESS_KEY_ID}"
+      password: "${AWS_ACCESS_KEY_ID}"
+
+    - id: redshift
+      type: redshift
+      description: REDSHIFT CONN
+      host: redshift-cluster-etl-vini.cpmardrhdluz.us-east-1.redshift.amazonaws.com
+      schema: etlvini
+      login: vini
+      password: "${REDSHIFT_PASSWORD}"
+      port: 5439
+
+    - id: postgres
+      type: postgres
+      description: POSTGRES CONN
+      host: vinipostgresql-instance.cngltutuixt3.us-east-1.rds.amazonaws.com
+      schema: vinipostgresql
+      login: vinietlaws
+      password: "${POSTGRES_PASSWORD}"
+      port: 5432
 
   ## bash-like templates to be used in `airflow.connections`
   ## - see docs for `airflow.usersTemplates`
@@ -217,7 +250,31 @@ airflow:
   ## - spec for EnvVar:
   ##   https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#envvar-v1-core
   ##
-  extraEnv: []
+  extraEnv:
+
+    - name: AWS_ACCESS_KEY_ID
+      valueFrom:
+        secretKeyRef:
+          name: aws-credentials
+          key: aws_access_key_id
+
+    - name: AWS_SECRET_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: aws-credentials
+          key: aws_secret_access_key
+
+    - name: REDSHIFT_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: redshift-credentials
+          key: redshift_password
+
+    - name: POSTGRES_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: postgres-credentials
+          key: postgres_password
 
   ## extra containers for the airflow Pods
   ## - spec for Container:
@@ -744,7 +801,7 @@ workers:
   ## - if you set this >1 we recommend defining a `workers.podDisruptionBudget`
   ## - this is the minimum when `workers.autoscaling.enabled` is true
   ##
-  replicas: 1
+  replicas: 10
 
   ## resource requests/limits for the worker Pod
   ## - spec for ResourceRequirements:
