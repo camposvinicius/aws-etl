@@ -3,10 +3,11 @@ name: 'Terraform Destroy'
 on:
   workflow_dispatch:
     inputs:
-      input:
-        description: "Terraform Destroy Resources"
+      name:
+        description: 'Terraform Destroy Resources'
+        default: 'destroy'
         required: false
-        default: "destroy"
+
 
 jobs:
   pack_deploy:
