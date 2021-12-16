@@ -204,6 +204,9 @@ airflow:
     - key: "POSTGRES_PASSWORD"
       value: "${POSTGRES_PASSWORD}"
 
+    - key: "GITHUB_TOKEN"
+      value: "${GITHUB_TOKEN}"
+
 
   ## bash-like templates to be used in `airflow.variables`
   ## - see docs for `airflow.usersTemplates`
@@ -224,6 +227,11 @@ airflow:
       kind: secret
       name: postgres-credentials
       key: postgres_password
+
+    GITHUB_TOKEN:
+      kind: secret
+      name: token-credential
+      key: token
 
   ## if we create a Deployment to perpetually sync `airflow.variables`
   ## - see docs for `airflow.usersUpdate`
