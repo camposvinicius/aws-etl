@@ -116,6 +116,7 @@ airflow:
   ##           "region_name":"eu-central-1" }
   ##
   connections: 
+
     - id: aws
       type: aws
       description: AWS CONN
@@ -154,6 +155,7 @@ airflow:
   ## - see docs for `airflow.usersTemplates`
   ##
   connectionsTemplates:
+
     AWS_ACCESS_KEY_ID:
       kind: secret
       name: aws-credentials
@@ -192,6 +194,7 @@ airflow:
   ##       value: "my_value_2"
   ##
   variables:
+
     - key: "AWS_ACCESS_KEY_ID"
       value: "${AWS_ACCESS_KEY_ID}"
 
@@ -206,6 +209,7 @@ airflow:
   ## - see docs for `airflow.usersTemplates`
   ##
   variablesTemplates:
+  
     AWS_ACCESS_KEY_ID:
       kind: secret
       name: aws-credentials
