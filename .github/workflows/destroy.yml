@@ -1,8 +1,12 @@
 name: 'Terraform Destroy'
 
 on:
-  push:
-    branches: [destroy]
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Terraform Destroy Resources"
+        required: false
+        default: "destroy"
 
 jobs:
   pack_deploy:
