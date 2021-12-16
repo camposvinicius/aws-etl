@@ -15,6 +15,7 @@ from airflow.utils.dates import days_ago
 
 from airflow.operators.python import PythonOperator
 from airflow.operators.dummy import DummyOperator
+from airflow.operators.bash import BashOperator
 
 from airflow.providers.amazon.aws.operators.s3_bucket import (
     S3CreateBucketOperator, 
@@ -62,6 +63,11 @@ POSTGRESQL_TABLE = 'vini_etl_aws_postgresql_table'
 POSTGRES_ENDPOINT = f'{POSTGRES_DATABASE}-instance.cngltutuixt3.us-east-1.rds.amazonaws.com'
 
 POSTGRESQL_CONNECTION = f'postgresql://{POSTGRES_USERNAME}:{POSTGRES_PASSWORD}@{POSTGRES_ENDPOINT}:{POSTGRES_PORT}/{POSTGRES_DATABASE}'
+
+GITHUB_TOKEN = Variable.get("GITHUB_TOKEN")
+GITHUB_USER = getenv("GITHUB_USER", "camposvinicius")
+GITHUB_REPO = getenv("GITHUB_REPO", "aws-etl")
+GITHUB_WORKFLOW_FILE_NAME = getenv("GITHUB_WORKFLOW_FILE_NAME", "destroy.yml")
 
 EMR_CODE_PATH = 's3://emr-code-zone-vini-etl-aws'
 
@@ -400,6 +406,24 @@ with DAG(
         task_id='task_dummy'
     )
 
+    task_github_workflow_action_destroy_resources_aws = BashOperator(
+        task_id='github_workflow_action_destroy_resources_aws',
+        bash_command="""
+            curl \
+                -X POST \
+                -H "Authorization: Token {{ params.GITHUB_TOKEN }} " \
+                https://api.github.com/repos/{{ params.GITHUB_USER }}/{{ params.GITHUB_REPO }}/actions/workflows/{{ params.GITHUB_WORKFLOW_FILE_NAME }}/dispatches \
+                -d '{"ref":"main", "inputs": { "action": "destroy" }}'
+        """,
+        params={
+            'GITHUB_TOKEN': f'{GITHUB_TOKEN}',
+            'GITHUB_USER': f'{GITHUB_USER}',
+            'GITHUB_REPO': f'{GITHUB_REPO}',
+            'GITHUB_WORKFLOW_FILE_NAME': f'{GITHUB_WORKFLOW_FILE_NAME}',
+
+        }
+    )
+
     verify_csv_files_on_s3 = S3KeySensor(
         task_id='verify_csv_files_on_s3',
         bucket_key='data/AdventureWorks/*.csv',
@@ -552,7 +576,7 @@ with DAG(
             aws_conn_id='aws'
         )
 
-        task_dummy >> delete_buckets
+        task_dummy >> delete_buckets >> task_github_workflow_action_destroy_resources_aws
 
     # EMR TASKS AND RELATED 2 #
     
