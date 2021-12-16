@@ -1,10 +1,8 @@
 name: 'Terraform Verify'
 
 on:
-  repository_dispatch:
-    types: [build]
-  #pull_request:
-  #  branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
   pack_deploy:
