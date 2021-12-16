@@ -123,7 +123,7 @@ airflow:
       extra: |-
         { 
           "aws_access_key_id": "${AWS_ACCESS_KEY_ID}",
-          "aws_secret_access_key": "${AWS_ACCESS_KEY_ID}",
+          "aws_secret_access_key": "${AWS_SECRET_ACCESS_KEY}",
           "region_name":"us-east-1" 
         }
 
@@ -131,7 +131,7 @@ airflow:
       type: emr
       description: EMR CONN
       login: "${AWS_ACCESS_KEY_ID}"
-      password: "${AWS_ACCESS_KEY_ID}"
+      password: "${AWS_SECRET_ACCESS_KEY}"
 
     - id: redshift
       type: redshift
