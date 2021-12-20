@@ -16,8 +16,17 @@ resource "aws_db_instance" "vinipostgresql-instance" {
   }
 }
 
+resource "aws_vpc" "rds_vpc" {
+  cidr_block       = "10.0.0.0/16"
+  instance_tenancy = "default"
+
+  tags = {
+    Name = "rds-vpc"
+  }
+}
+
 resource "aws_security_group" "vinipostgresql" {
-  vpc_id = "vpc-03488ba8928c09625"
+  vpc_id = aws_vpc.rds_vpc.id
   name   = "vinipostgresql"
 
   ingress {
