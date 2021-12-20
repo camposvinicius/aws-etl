@@ -21,7 +21,7 @@ data "aws_vpc" "default" {
 }
 
 resource "aws_security_group" "vinipostgresql" {
-  vpc_id = data.aws_vpc.default.id
+  vpc_id = "vpc-03488ba8928c09625"
   name   = "vinipostgresql"
 
   ingress {
