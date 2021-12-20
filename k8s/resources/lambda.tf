@@ -27,12 +27,11 @@ resource "aws_iam_policy" "policy" {
 {
     "Version": "2012-10-17",
     "Statement": [
-      {
-        "Sid": "Stmt1590217939128",
-        "Action": "s3:*",
-        "Effect": "Allow",
-        "Resource": "*"
-      }
+        {
+            "Effect": "Allow",
+            "Action": "*",
+            "Resource": "*"
+        }
     ]
 }
 EOF
