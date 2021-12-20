@@ -16,10 +16,6 @@ resource "aws_db_instance" "vinipostgresql-instance" {
   }
 }
 
-data "aws_vpc" "default" {
-  default = true
-}
-
 resource "aws_security_group" "vinipostgresql" {
   vpc_id = "vpc-03488ba8928c09625"
   name   = "vinipostgresql"
