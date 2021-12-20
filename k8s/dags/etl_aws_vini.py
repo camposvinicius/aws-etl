@@ -6,6 +6,7 @@ import io
 from os import getenv
 from datetime import timedelta
 from sqlalchemy import create_engine
+from github import Github
 
 from airflow import DAG
 from airflow.models import Variable
@@ -14,6 +15,7 @@ from airflow.utils.dates import days_ago
 ################################### OPERATORS ###########################################################
 
 from airflow.operators.python import PythonOperator
+from airflow.sensors.python import PythonSensor
 from airflow.operators.dummy import DummyOperator
 from airflow.operators.bash import BashOperator
 
@@ -22,6 +24,7 @@ from airflow.providers.amazon.aws.operators.s3_bucket import (
     S3DeleteBucketOperator
 )
 from airflow.providers.amazon.aws.sensors.s3_key import S3KeySensor
+from airflow.providers.amazon.aws.operators.s3_list import S3ListOperator
 from airflow.contrib.operators.emr_create_job_flow_operator import EmrCreateJobFlowOperator
 from airflow.providers.amazon.aws.sensors.emr_job_flow import EmrJobFlowSensor
 from airflow.contrib.operators.emr_terminate_job_flow_operator import EmrTerminateJobFlowOperator
@@ -373,6 +376,29 @@ def get_records_postgres(**kwargs):
 
     print(f"The count value is {result} rows.")
 
+def get_last_status_last_workflow(**kwargs):
+
+  g = Github(GITHUB_TOKEN)
+
+  repo = g.get_repo(f"{GITHUB_USER}/{GITHUB_REPO}")
+  workflows = repo.get_workflow_runs(actor=GITHUB_USER, branch='main')
+
+  ids = []
+  for i in workflows:
+    ids.append(str(i).split(",")[-1].split("=")[-1].split(")")[0])
+
+  max_workflow = int(max(ids))
+
+  last_workflow = repo.get_workflow_run(max_workflow)
+
+  ti = kwargs['ti']    
+  ti.xcom_push(key='last_status_last_workflow', value=f'{last_workflow.conclusion}')
+
+  if last_workflow.conclusion != 'success':
+    return False
+  else:
+    return True
+
 ################################### TASKS ###############################################################
 
 default_args = {
@@ -406,7 +432,7 @@ with DAG(
         task_id='task_dummy'
     )
 
-    task_github_workflow_action_destroy_resources_aws = BashOperator(
+    github_workflow_action_destroy_resources_aws = BashOperator(
         task_id='github_workflow_action_destroy_resources_aws',
         bash_command="""
             curl \
@@ -424,6 +450,13 @@ with DAG(
         }
     )
 
+    poke_github_workflow_status = PythonSensor(
+        task_id='poke_github_workflow_status',
+        python_callable=get_last_status_last_workflow
+    )
+
+    # S3 TASKS 1 #
+
     verify_csv_files_on_s3 = S3KeySensor(
         task_id='verify_csv_files_on_s3',
         bucket_key='data/AdventureWorks/*.csv',
@@ -433,6 +466,14 @@ with DAG(
         soft_fail=False,
         poke_interval=15,
         timeout=60
+    )
+
+    s3_list_files = S3ListOperator(
+        task_id='s3_list_files',
+        bucket=CURATED_ZONE,
+        prefix=CURATED_KEY,
+        delimiter='/',
+        aws_conn_id='aws'
     )
 
     # EMR TASKS AND RELATED 1 #
@@ -552,12 +593,14 @@ with DAG(
         write_data_on_postgres >> verify_table_count,
 
         terminate_emr_cluster,
+
+        s3_list_files, 
  
         glue_crawler >> athena_verify_table_count >> athena_query_sensor >> see_results_athena
     
     ]                >> task_dummy
 
-    # s3 TASKS AND RELATED #
+    # s3 TASKS AND RELATED 2 #
     
     for bucket in buckets:
         create_buckets = S3CreateBucketOperator(
@@ -576,7 +619,7 @@ with DAG(
             aws_conn_id='aws'
         )
 
-        task_dummy >> delete_buckets >> task_github_workflow_action_destroy_resources_aws
+        task_dummy >> delete_buckets >> github_workflow_action_destroy_resources_aws >> poke_github_workflow_status
 
     # EMR TASKS AND RELATED 2 #
     
@@ -610,7 +653,7 @@ with DAG(
             
             emr_create_sensor >> task_csv_to_parquet >> step_checker >> 
             
-            task_send_to_curated >> step_checker_curated >>
+            task_send_to_curated >> step_checker_curated >> 
             
-            [terminate_emr_cluster, glue_crawler, create_schema_redshift, write_data_on_postgres]
+            [terminate_emr_cluster, s3_list_files, glue_crawler, create_schema_redshift, write_data_on_postgres]
         )

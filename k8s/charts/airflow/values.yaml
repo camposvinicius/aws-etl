@@ -299,6 +299,7 @@ airflow:
     - "sqlalchemy"
     - "boto3"
     - "pandas"
+    - "pygithub"
 
   ## extra environment variables for the airflow Pods
   ## - spec for EnvVar:
@@ -412,6 +413,7 @@ airflow:
       - "sqlalchemy"
       - "boto3"
       - "pandas"
+      - "pygithub"
 
     ## extra VolumeMounts for the Pod template
     ## - spec for VolumeMount:
@@ -644,6 +646,7 @@ scheduler:
     - "sqlalchemy"
     - "boto3"
     - "pandas"
+    - "pygithub"
 
   ## extra VolumeMounts for the scheduler Pods
   ## - spec of VolumeMount:
@@ -806,6 +809,7 @@ web:
     - "sqlalchemy"
     - "boto3"
     - "pandas"
+    - "pygithub"
 
   ## extra VolumeMounts for the web Pods
   ## - spec for VolumeMount:
@@ -956,6 +960,7 @@ workers:
     - "sqlalchemy"
     - "boto3"
     - "pandas"
+    - "pygithub"
 
   ## extra VolumeMounts for the worker Pods
   ## - spec for VolumeMount:
@@ -1097,6 +1102,7 @@ flower:
     - "sqlalchemy"
     - "boto3"
     - "pandas"
+    - "pygithub"
 
   ## extra VolumeMounts for the flower Pods
   ## - spec for VolumeMount:
