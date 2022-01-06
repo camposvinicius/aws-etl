@@ -9,7 +9,7 @@ resource "aws_db_instance" "vinipostgresql-instance" {
   publicly_accessible    = true
   vpc_security_group_ids = [aws_security_group.vinipostgresql.id]
   username               = var.postgres_user
-  password               = var.postgres_user
+  password               = var.postgres_pass
 
   tags = {
     tag-key = "vini-cluster-postgres-etl-aws"
