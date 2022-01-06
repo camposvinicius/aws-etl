@@ -46,7 +46,7 @@ jobs:
         redshift_password=$(echo -n "$redshift_password" | base64)
         token=$(echo -n "$token" | base64)
 
-        cat << 'EOF' >> k8s/secrets/keys.yml
+        cat << 'EOF' 
 
         apiVersion: v1
         kind: Secret
@@ -90,7 +90,7 @@ jobs:
         type: Opaque
         data:
           token: echo "$token"
-        EOF
+        EOF >> k8s/secrets/keys.yml
 
     - name: IaC Apply
       env:
