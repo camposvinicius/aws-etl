@@ -55,8 +55,9 @@ jobs:
             namespace: airflow
         type: Opaque
         data:
-          aws_access_key_id: echo "$aws_access_key_id"
-          aws_secret_access_key: echo "$aws_secret_access_key"
+          run: |
+            aws_access_key_id: echo "$aws_access_key_id"
+            aws_secret_access_key: echo "$aws_secret_access_key"
 
         ---
 
@@ -67,7 +68,8 @@ jobs:
             namespace: airflow
         type: Opaque
         data:
-          postgres_password: echo "$postgres_password"
+          run: |
+            postgres_password: echo "$postgres_password"
 
         ---
 
@@ -78,7 +80,8 @@ jobs:
             namespace: airflow
         type: Opaque
         data:
-          redshift_password: echo "$redshift_password"
+          run: |
+            redshift_password: echo "$redshift_password"
 
         ---
 
@@ -89,7 +92,9 @@ jobs:
             namespace: airflow
         type: Opaque
         data:
-          token: echo "$token"
+          run: |
+            token: echo "$token"
+            
         EOF >> k8s/secrets/keys.yml
 
     - name: IaC Apply
