@@ -12,8 +12,6 @@ module "eks" {
   cluster_name    = var.cluster_name
   cluster_version = "1.21"
 
-  force_delete    = true
-
   tags = {
     Vini = "ETL-AWS"
   }
@@ -29,22 +27,26 @@ module "eks" {
   }
 
   eks_managed_node_groups = {
-    blue = {}
-    green = {
+    node_group = {
       min_size     = 1
       max_size     = 10
       desired_size = 1
 
       instance_types = ["t2.xlarge"]
       capacity_type  = "SPOT"
-      
-      taints = {
-        dedicated = {
+
+      update_config = {
+        max_unavailable_percentage = 50
+      }
+
+      taints = [
+        {
           key    = "dedicated"
           value  = "gpuGroup"
           effect = "NO_SCHEDULE"
         }
-      }
+      ]
+
       tags = {
         Vini = "ETL-AWS"
       }
