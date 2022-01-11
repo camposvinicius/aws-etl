@@ -7,23 +7,18 @@ data "aws_eks_cluster_auth" "cluster" {
   name = module.eks.cluster_id
 }
 
-
-resource "aws_security_group" "additional" {
-  vpc_id      = module.vpc.vpc_id
+resource "aws_security_group" "eks_sg" {
+  vpc_id = aws_vpc.rds_vpc.id
+  name   = "vinieks_sg"
 
   ingress {
-    from_port = 22
-    to_port   = 22
-    protocol  = "tcp"
-    cidr_blocks = [
-      "10.0.0.0/8",
-      "172.16.0.0/12",
-      "192.168.0.0/16",
-    ]
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
   }
 
   tags = {
-    Vini = "ETL-AWS"
+    tag-key = "sg-eks"
   }
 }
 
@@ -43,7 +38,7 @@ module "eks" {
     ami_type               = "AL2_x86_64"
     disk_size              = 50
     instance_types         = ["t2.xlarge"]
-    vpc_security_group_ids = [aws_security_group.additional.id]
+    vpc_security_group_ids = [aws_security_group.eks_sg.id]
   }
 
   eks_managed_node_groups = {
