@@ -7,34 +7,69 @@ data "aws_eks_cluster_auth" "cluster" {
   name = module.eks.cluster_id
 }
 
+
+resource "aws_security_group" "additional" {
+  vpc_id      = module.vpc.vpc_id
+
+  ingress {
+    from_port = 22
+    to_port   = 22
+    protocol  = "tcp"
+    cidr_blocks = [
+      "10.0.0.0/8",
+      "172.16.0.0/12",
+      "192.168.0.0/16",
+    ]
+  }
+
+  tags = {
+    Vini = "ETL-AWS"
+  }
+}
+
 module "eks" {
   source          = "terraform-aws-modules/eks/aws"
   cluster_name    = var.cluster_name
   cluster_version = "1.21"
-  subnets         = module.vpc.private_subnets
 
   tags = {
     Vini = "ETL-AWS"
   }
 
-  vpc_id = module.vpc.vpc_id
+  vpc_id     = module.vpc.vpc_id
+  subnet_ids = module.vpc.private_subnets
 
-  workers_group_defaults = {
-    root_volume_type = "gp2"
+  eks_managed_node_group_defaults = {
+    ami_type               = "AL2_x86_64"
+    disk_size              = 50
+    instance_types         = ["t2.xlarge"]
+    vpc_security_group_ids = [aws_security_group.additional.id]
   }
 
-  worker_groups = [
-    {
-      name                          = "worker-group-1"
-      instance_type                 = "t2.xlarge"
-      asg_desired_capacity          = 2
-      additional_security_group_ids = [aws_security_group.worker_group_mgmt_one.id]
-    },
-    {
-      name                          = "worker-group-2"
-      instance_type                 = "t2.large"
-      asg_desired_capacity          = 1
-      additional_security_group_ids = [aws_security_group.worker_group_mgmt_two.id]
-    },
-  ]
+  eks_managed_node_groups = {
+    node_group = {
+      min_size     = 1
+      max_size     = 10
+      desired_size = 1
+
+      instance_types = ["t2.xlarge"]
+      capacity_type  = "SPOT"
+
+      update_config = {
+        max_unavailable_percentage = 50
+      }
+
+      taints = [
+        {
+          key    = "dedicated"
+          value  = "gpuGroup"
+          effect = "NO_SCHEDULE"
+        }
+      ]
+
+      tags = {
+        Vini = "ETL-AWS"
+      }
+    }
+  }
 }

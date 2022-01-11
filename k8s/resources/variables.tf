@@ -3,7 +3,7 @@ variable "region" {
 }
 
 variable "cluster_name" {
-  default = "eks-cluster-vini-campos-etl-aws"
+  default = "eks-cluster-vini-etl-aws"
 }
 
 variable "redshift_user" {

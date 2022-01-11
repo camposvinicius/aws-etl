@@ -446,7 +446,6 @@ with DAG(
             'GITHUB_USER': f'{GITHUB_USER}',
             'GITHUB_REPO': f'{GITHUB_REPO}',
             'GITHUB_WORKFLOW_FILE_NAME': f'{GITHUB_WORKFLOW_FILE_NAME}',
-
         }
     )
 
