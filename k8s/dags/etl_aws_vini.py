@@ -40,7 +40,7 @@ from airflow.providers.amazon.aws.operators.sns import SnsPublishOperator
 
 ################################### VARIABLES ###########################################################
 
-AWS_PROJECT = getenv("AWS_PROJECT", "vini-etl-aws")
+AWS_PROJECT = getenv("AWS_PROJECT", "vini-poc-etl-aws")
 
 REGION = getenv("REGION", "us-east-1")
 AWS_ACCESS_KEY_ID = Variable.get("AWS_ACCESS_KEY_ID")
