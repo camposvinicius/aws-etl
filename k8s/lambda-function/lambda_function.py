@@ -2,7 +2,7 @@ import requests, io, tempfile, os, boto3
 from zipfile import ZipFile
 
 file_name = 'AdventureWorks.zip'
-bucket = "landing-zone-vini-etl-aws"
+bucket = "landing-zone-vini-poc-etl-aws"
 folder_temp_name = 'temp'
 url = 'https://github.com/camposvinicius/aws-etl/raw/dev/data/AdventureWorks.zip'
 
