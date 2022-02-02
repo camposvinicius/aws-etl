@@ -3,7 +3,7 @@ variable "region" {
 }
 
 variable "cluster_name" {
-  default = "eks-cluster-vini-etl-aws"
+  default = "vini-cluster-eks"
 }
 
 variable "redshift_user" {
@@ -24,6 +24,7 @@ variable "postgres_user" {
 variable "postgres_pass" {
   default = "vinietlaws"
 }
+
 variable "email" {
   default = "test.vini.etl.aws@gmail.com"
 }

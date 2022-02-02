@@ -26,6 +26,34 @@ resource "kubectl_manifest" "argocd" {
   ]
 }
 
+data "kubectl_file_documents" "git" {
+  content = file("../charts/argocd/auth.yaml")
+}
+
+resource "kubectl_manifest" "git" {
+  count              = length(data.kubectl_file_documents.git.documents)
+  yaml_body          = element(data.kubectl_file_documents.git.documents, count.index)
+  override_namespace = "argocd"
+  depends_on = [
+    kubectl_manifest.argocd,
+    data.kubectl_file_documents.git
+  ]
+}
+
+data "kubectl_file_documents" "airflow_key" {
+  content = file("../airflow_access_git_repo/ssh.yaml")
+}
+
+resource "kubectl_manifest" "airflow_manifest" {
+  count              = length(data.kubectl_file_documents.airflow_key.documents)
+  yaml_body          = element(data.kubectl_file_documents.airflow_key.documents, count.index)
+  override_namespace = "airflow"
+  depends_on = [
+    kubectl_manifest.argocd,
+    data.kubectl_file_documents.airflow_key
+  ]
+}
+
 data "kubectl_file_documents" "airflow" {
   content = file("../apps/airflow-app.yaml")
 }
