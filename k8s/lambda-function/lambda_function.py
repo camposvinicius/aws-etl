@@ -4,7 +4,7 @@ from zipfile import ZipFile
 file_name = 'AdventureWorks.zip'
 bucket = "landing-zone-vini-poc-etl-aws"
 folder_temp_name = 'temp'
-url = 'https://github.com/camposvinicius/aws-etl/raw/dev/data/AdventureWorks.zip'
+url = 'https://github.com/camposvinicius/data/blob/main/AdventureWorks.zip'
 
 def lambda_handler(event, context):
     
