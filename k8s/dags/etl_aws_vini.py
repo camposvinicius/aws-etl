@@ -90,13 +90,6 @@ EMR_CONFIG = {
                 'InstanceCount': 1,
             },
             {
-                "Name": "CORE_NODES",
-                "Market": "ON_DEMAND",
-                "InstanceRole": "CORE",
-                "InstanceType": "c4.large",
-                "InstanceCount": 1,
-            },
-            {
                 "Name": "TASK_NODES",
                 "Market": "SPOT",
                 "BidPrice": "0.041",
