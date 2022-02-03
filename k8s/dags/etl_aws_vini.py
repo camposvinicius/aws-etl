@@ -94,7 +94,7 @@ EMR_CONFIG = {
                 "Market": "ON_DEMAND",
                 "InstanceRole": "CORE",
                 "InstanceType": "c4.large",
-                "InstanceCount": 2,
+                "InstanceCount": 1,
             }
         ],
         'Ec2KeyName': 'my-key',
