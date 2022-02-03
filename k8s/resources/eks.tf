@@ -21,13 +21,7 @@ module "eks" {
       instance_type                 = "m2.xlarge"
       asg_desired_capacity          = 1
       additional_security_group_ids = [aws_security_group.worker_group_mgmt_one.id]
-    },
-    {
-      name                          = "worker-group-2"
-      instance_type                 = "m2.xlarge"
-      additional_security_group_ids = [aws_security_group.worker_group_mgmt_two.id]
-      asg_desired_capacity          = 0
-    },
+    }
   ]
 }
 
