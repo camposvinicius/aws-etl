@@ -152,7 +152,7 @@ EMR_CONFIG = {
 
 SPARK_ARGUMENTS = [
     'spark-submit',
-    '--deploy-mode', 'cluster',
+    '--deploy-mode', 'client',
     '--conf', 'spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version=2',
     '--conf', 'spark.sql.join.preferSortMergeJoin=true',
     '--conf', 'spark.speculation=false',
