@@ -87,39 +87,7 @@ EMR_CONFIG = {
                 "Market": "ON_DEMAND",
                 "InstanceRole": "MASTER",
                 "InstanceType": "c4.large",
-                "InstanceCount": 1,
-                "AutoScalingPolicy":
-                    {
-                        "Constraints":
-                    {
-                        "MinCapacity": 1,
-                        "MaxCapacity": 2
-                    },
-                    "Rules":
-                        [
-                    {
-                    "Name": "Scale Up",
-                    "Action":{
-                        "SimpleScalingPolicyConfiguration":{
-                        "AdjustmentType": "CHANGE_IN_CAPACITY",
-                        "ScalingAdjustment": 1,
-                        "CoolDown": 120
-                        }
-                    },
-                    "Trigger":{
-                        "CloudWatchAlarmDefinition":{
-                        "ComparisonOperator": "GREATER_THAN_OR_EQUAL",
-                        "EvaluationPeriods": 1,
-                        "MetricName": "Scale Up",
-                        "Period": 60,
-                        "Threshold": 15,
-                        "Statistic": "AVERAGE",
-                        "Threshold": 75
-                        }
-                    }
-                    }
-                    ]
-                }
+                "InstanceCount": 1
             }
         ],
         'Ec2KeyName': 'my-key',
