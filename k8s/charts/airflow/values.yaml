@@ -835,7 +835,7 @@ workers:
   ## - if you set this >1 we recommend defining a `workers.podDisruptionBudget`
   ## - this is the minimum when `workers.autoscaling.enabled` is true
   ##
-  replicas: 2
+  replicas: 10
 
   ## resource requests/limits for the worker Pod
   ## - spec for ResourceRequirements:
