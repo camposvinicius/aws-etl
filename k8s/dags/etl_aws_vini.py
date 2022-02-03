@@ -102,7 +102,7 @@ EMR_CONFIG = {
                 "BidPrice": "0.041",
                 "InstanceRole": "TASK",
                 "InstanceType": "c4.large",
-                "InstanceCount": 2,
+                "InstanceCount": 1,
                 "AutoScalingPolicy":
                     {
                         "Constraints":
@@ -152,7 +152,7 @@ EMR_CONFIG = {
 
 SPARK_ARGUMENTS = [
     'spark-submit',
-    '--deploy-mode', 'client',
+    '--deploy-mode', 'cluster',
     '--conf', 'spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version=2',
     '--conf', 'spark.sql.join.preferSortMergeJoin=true',
     '--conf', 'spark.speculation=false',
