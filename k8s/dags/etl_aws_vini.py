@@ -90,44 +90,11 @@ EMR_CONFIG = {
                 'InstanceCount': 1,
             },
             {
-                "Name": "TASK_NODES",
-                "Market": "SPOT",
-                "BidPrice": "0.041",
-                "InstanceRole": "TASK",
+                "Name": "CORE_NODES",
+                "Market": "ON_DEMAND",
+                "InstanceRole": "CORE",
                 "InstanceType": "c4.large",
-                "InstanceCount": 1,
-                "AutoScalingPolicy":
-                    {
-                        "Constraints":
-                    {
-                        "MinCapacity": 1,
-                        "MaxCapacity": 2
-                    },
-                    "Rules":
-                        [
-                    {
-                    "Name": "Scale Up",
-                    "Action":{
-                        "SimpleScalingPolicyConfiguration":{
-                        "AdjustmentType": "CHANGE_IN_CAPACITY",
-                        "ScalingAdjustment": 1,
-                        "CoolDown": 120
-                        }
-                    },
-                    "Trigger":{
-                        "CloudWatchAlarmDefinition":{
-                        "ComparisonOperator": "GREATER_THAN_OR_EQUAL",
-                        "EvaluationPeriods": 1,
-                        "MetricName": "Scale Up",
-                        "Period": 60,
-                        "Threshold": 15,
-                        "Statistic": "AVERAGE",
-                        "Threshold": 75
-                        }
-                    }
-                    }
-                    ]
-                }
+                "InstanceCount": 2,
             }
         ],
         'Ec2KeyName': 'my-key',
@@ -145,7 +112,7 @@ EMR_CONFIG = {
 
 SPARK_ARGUMENTS = [
     'spark-submit',
-    '--deploy-mode', 'cluster',
+    '--deploy-mode', 'client',
     '--conf', 'spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version=2',
     '--conf', 'spark.sql.join.preferSortMergeJoin=true',
     '--conf', 'spark.speculation=false',
