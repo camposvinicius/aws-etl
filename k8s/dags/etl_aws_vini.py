@@ -78,7 +78,7 @@ EMR_CODE_PATH = 's3://emr-code-zone-vini-etl-aws'
 
 EMR_CONFIG = {
     'Name': 'ETL-VINI-AWS',
-    "ReleaseLabel": "emr-6.5.0",
+    "ReleaseLabel": "emr-5.12.0",
     "Applications": [{"Name": "Hadoop"}, {"Name": "Spark"}], 
     'Instances': {
         'InstanceGroups': [
