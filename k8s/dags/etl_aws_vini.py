@@ -86,23 +86,23 @@ EMR_CONFIG = {
                 'Name': 'MASTER_NODES',
                 'Market': 'ON_DEMAND',
                 'InstanceRole': 'MASTER',
-                'InstanceType': "m1.small",
+                'InstanceType': "c4.large",
                 'InstanceCount': 1,
             },
             {
                 "Name": "CORE_NODES",
                 "Market": "ON_DEMAND",
                 "InstanceRole": "CORE",
-                "InstanceType": "m1.small",
+                "InstanceType": "c4.large",
                 "InstanceCount": 1,
             },
             {
                 "Name": "TASK_NODES",
                 "Market": "SPOT",
-                "BidPrice": "0.006",
+                "BidPrice": "0.041",
                 "InstanceRole": "TASK",
-                "InstanceType": "m1.small",
-                "InstanceCount": 1,
+                "InstanceType": "c4.large",
+                "InstanceCount": 2,
                 "AutoScalingPolicy":
                     {
                         "Constraints":
