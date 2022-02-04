@@ -13,7 +13,8 @@ List of tools we will be using:
 - EMR
 - Glue Crawler
 - Glue Database
-- Policies and Roles
+- Policy 
+- Roles
 - EKS
 - VPC
 - SNS
