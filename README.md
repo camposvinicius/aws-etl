@@ -35,7 +35,8 @@ List of tools we will be using:
 
 First of all, we need to create a bucket in AWS that will hold the state of our infrastructure.
 
-![tfstate]()
+![tfstate](https://user-images.githubusercontent.com/86246834/152552425-0a32d3c6-cb9c-4fa7-9644-7fbd7d325df9.png)
+
 
 ## Terraform Scripts
 
@@ -282,7 +283,7 @@ resource "aws_s3_bucket_object" "codes_object" {
 }
 ```
 
-#### [glue-crawler.tf](k8s/resources/glue-crawler.tf),
+#### [glue-crawler.tf](k8s/resources/glue-crawler.tf)
 
 Here we basically have the creation of a database and a crawler in glue to use in our pipeline, in addition to some policies and roles so we don't have problems with permission levels.
 
@@ -681,7 +682,7 @@ variable "email" {
 
 ```
 
-#### [versions.tf](k8s/resources/versions.tf),
+#### [versions.tf](k8s/resources/versions.tf)
 
 Here are basically the necessary versions of the modules that we will use for our code.
 
@@ -720,7 +721,7 @@ terraform {
 }
 ```
 
-#### [vpc.tf](k8s/resources/vpc.tf),
+#### [vpc.tf](k8s/resources/vpc.tf)
 
 Here we are creating a VPC module that we will use for the operation of our EKS cluster, it already contains the public and private subnets, in addition to the zones that I will use, in this case, just us-east-1.
 
@@ -754,7 +755,7 @@ module "vpc" {
 }
 ```
 
-#### [output.tf](k8s/resources/output.tf),
+#### [output.tf](k8s/resources/output.tf)
 
 Here we are just seeing in the log after creation some resources like the cluster ID, its name, endpoint and AWS region.
 
@@ -4065,17 +4066,9 @@ with DAG(
 
 Now that we understand what our DAG does, let's turn it on and see if we succeed.
 
-![dag-result](https://user-images.githubusercontent.com/86246834/141664784-d846c1e0-1c92-464a-bff8-179b0e069509.png)
+![dag-result](https://user-images.githubusercontent.com/86246834/152553899-d3ef63da-2594-44d9-9956-c50fe188234c.png)
 
-As you can see, we were successful in DAG, let's see the result in BigQuery.
-
-![bigquery](https://user-images.githubusercontent.com/86246834/141664814-d61ec6df-9de3-457c-9b88-6e9186e4a92c.png)
-
-Let's do a simple query to see our result.
-
-![result-bigquery](https://user-images.githubusercontent.com/86246834/141664845-d257d908-ebe5-4d9b-bc15-aa1d7320676f.png)
-
-And here are our data processed and served for areas in general.
+As you can see, we were successful in DAG.
 
 ## CI/CD
 
