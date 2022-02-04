@@ -6,7 +6,7 @@ on:
 
 jobs:
   pack_deploy:
-    name: Build and deploy DataLake
+    name: Build and Verify DataLake
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2

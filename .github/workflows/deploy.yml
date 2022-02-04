@@ -1,4 +1,4 @@
-name: 'Terraform Constroy'
+name: 'Terraform Deploy'
 
 on:
   push:

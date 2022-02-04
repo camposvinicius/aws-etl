@@ -2,49 +2,49 @@
 
 cd k8s/resources
 
-# Declara variavel para reutilização nas validações do diretório
+# Declare variable for reuse in directory validations
 PACKAGE="package"
 
-# Cria o diretório e instala as dependências da função lambda
+# Create directory and install lambda function dependencies
 if [ -d $PACKAGE ]
 then
-	echo "O Diretório "$PACKAGE" já existe."
+	echo "The directory "$PACKAGE" already exists."
 else
 	echo "============================================="
-	echo "Criando o diretório "$PACKAGE"..."
+	echo "Creating the directory "$PACKAGE"..."
 	mkdir $PACKAGE
-	echo "O diretório "$PACKAGE" foi criado."
+	echo "The directory "$PACKAGE" was created."
 	echo "============================================="
 fi
 
-# Declara variavel que localiza o requirements com as dependências do projeto
+# Declares the variable that locates the requirements with the project's dependencies.
 FILE_REQUIREMENTS=../scripts/requirements.txt
 
-# Verifica se o arquivo lambda_requirements existe
+# Checks if the lambda_requirements file exists
 if [ -f $FILE_REQUIREMENTS ]
 then
 	echo "============================================="
-	echo "Instalando dependências localizadas no "$FILE_REQUIREMENTS""
+	echo "Installing dependencies located in "$FILE_REQUIREMENTS""
 	pip install --target ./package -r $FILE_REQUIREMENTS
-	echo "Dependências instaladas com sucesso."
+	echo "Dependencies installed successfully."
 	echo "============================================="	
 fi
 
 
 cd $PACKAGE
 
-# Declara variavel que localiza a função lambda para reutilização no código.
+# Declares variable that locates the lambda function for reuse in code.
 LAMBDA_FUNCTION=../../lambda-function/lambda_function.py
 
-# Verifica se o arquivo lambda_function.py existe
+# Checks if the lambda_function.py file exists.
 if [ -f $LAMBDA_FUNCTION ]
 then
 	echo "============================================="
-	echo "Copiando função Handler..."
+	echo "Copying Handler function..."
 	cp $LAMBDA_FUNCTION .
-	echo "Compactando arquivo lambda_function.zip"
-	zip -r9 ../lambda_function.zip . #Compacta o pacote para o deploy
-	echo "Arquivo compactado com sucesso!"
+	echo "Compressing file lambda_function.zip"
+	zip -r9 ../lambda_function.zip . # Compress the package for deployment
+	echo "File zipped successfully!"
 	echo "============================================="
 fi
 

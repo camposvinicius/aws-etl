@@ -86,15 +86,55 @@ EMR_CONFIG = {
                 'Name': 'MASTER_NODES',
                 'Market': 'ON_DEMAND',
                 'InstanceRole': 'MASTER',
-                'InstanceType': "c4.large",
+                'InstanceType': 'm5.xlarge',
                 'InstanceCount': 1,
             },
             {
                 "Name": "CORE_NODES",
                 "Market": "ON_DEMAND",
                 "InstanceRole": "CORE",
-                "InstanceType": "c4.large",
+                "InstanceType": "m5.xlarge",
                 "InstanceCount": 1,
+            },
+            {
+                "Name": "TASK_NODES",
+                "Market": "SPOT",
+                "BidPrice": "0.088",
+                "InstanceRole": "TASK",
+                "InstanceType": "m5.xlarge",
+                "InstanceCount": 1,
+                "AutoScalingPolicy":
+                    {
+                        "Constraints":
+                    {
+                        "MinCapacity": 1,
+                        "MaxCapacity": 2
+                    },
+                    "Rules":
+                        [
+                    {
+                    "Name": "Scale Up",
+                    "Action":{
+                        "SimpleScalingPolicyConfiguration":{
+                        "AdjustmentType": "CHANGE_IN_CAPACITY",
+                        "ScalingAdjustment": 1,
+                        "CoolDown": 120
+                        }
+                    },
+                    "Trigger":{
+                        "CloudWatchAlarmDefinition":{
+                        "ComparisonOperator": "GREATER_THAN_OR_EQUAL",
+                        "EvaluationPeriods": 1,
+                        "MetricName": "Scale Up",
+                        "Period": 60,
+                        "Threshold": 15,
+                        "Statistic": "AVERAGE",
+                        "Threshold": 75
+                        }
+                    }
+                    }
+                    ]
+                }
             }
         ],
         'Ec2KeyName': 'my-key',
@@ -112,7 +152,7 @@ EMR_CONFIG = {
 
 SPARK_ARGUMENTS = [
     'spark-submit',
-    '--deploy-mode', 'client',
+    '--deploy-mode', 'cluster',
     '--conf', 'spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version=2',
     '--conf', 'spark.sql.join.preferSortMergeJoin=true',
     '--conf', 'spark.speculation=false',

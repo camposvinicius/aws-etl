@@ -10,7 +10,7 @@ on:
 
 jobs:
   pack_deploy:
-    name: Build and deploy DataLake
+    name: Build and Destroy DataLake
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -20,7 +20,7 @@ jobs:
       with:
         python-version: 3.8
         
-    - name: Build Lambda package
+    - name: Build Lambda package to Destroy...
       run: |
         sh k8s/scripts/build_lambda_package.sh
     
