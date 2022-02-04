@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: private-bgd-repo
+  namespace: argocd-repo
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  url: https://github.com/your/private-repo.git
+  password: your-github-token
+  username: your-username

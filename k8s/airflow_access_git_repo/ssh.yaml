@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: airflow-http-git-secret
+    namespace: airflow
+type: Opaque
+data:
+  username: your-username-with-base64 # you can use => echo -n "username" | base64
+stringData:
+  password: your-github-token

@@ -1,0 +1,3 @@
+aws emr create-default-roles
+
+aws eks --region us-east-1 update-kubeconfig --name vini-cluster-eks

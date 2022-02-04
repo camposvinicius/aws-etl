@@ -1,0 +1,43 @@
+name: 'Terraform Destroy'
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Terraform Destroy Resources"
+        required: false
+        default: "destroy"
+
+jobs:
+  pack_deploy:
+    name: Build and Destroy DataLake
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+        
+    - name: Build Lambda package to Destroy...
+      run: |
+        sh k8s/scripts/build_lambda_package.sh
+    
+    - name: HashiCorp - Setup Terraform
+      uses: hashicorp/setup-terraform@v1.2.1
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: IaC Apply
+      env:
+        COMMAND_IAC: terraform
+      run: |
+        cd k8s/resources
+        $COMMAND_IAC init
+        $COMMAND_IAC destroy -auto-approve

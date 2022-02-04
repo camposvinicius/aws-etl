@@ -1,0 +1,9 @@
+aws-key.txt
+*.terraform
+*.terraform.*
+k8s/resources/kubeconfig_eks-cluster-vini-campos-etl-aws
+aws_key.json
+connect.txt
+key-emr.txt
+__pycache__
+t.py
