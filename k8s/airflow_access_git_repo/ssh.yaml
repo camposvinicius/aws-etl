@@ -5,6 +5,6 @@ metadata:
     namespace: airflow
 type: Opaque
 data:
-  username: Y2FtcG9zdmluaWNpdXM=
+  username: your-username-with-base64 # you can use => echo -n "username" | base64
 stringData:
-  password: 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
+  password: your-github-token

@@ -367,6 +367,70 @@ resource "aws_key_pair" "my-key" {
 }
 ```
 
+#### [lambda.tf](k8s/resources/lambda.tf)
+
+Here we are basically creating a role and assuming a policy with permission for all resources, in addition to our lambda function, with its characteristics.
+
+```terraform
+resource "aws_iam_role" "iam_for_lambda" {
+  name = "iam_for_lambda"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": [
+          "lambda.amazonaws.com"
+        ]
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_policy" "policy" {
+  name = "iam_for_lambda_policy"
+
+  policy = <<-EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "*",
+            "Resource": "*"
+        }
+    ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy_attachment" "policy-attach" {
+  role       = aws_iam_role.iam_for_lambda.name
+  policy_arn = aws_iam_policy.policy.arn
+}
+
+resource "aws_lambda_function" "lambda_function" {
+  function_name = "myfunction"
+  filename      = "lambda_function.zip"
+  role          = aws_iam_role.iam_for_lambda.arn
+  handler       = "lambda_function.lambda_handler"
+  memory_size   = 1000
+  timeout       = 120
+
+  source_code_hash = filebase64sha256("lambda_function.zip")
+
+  runtime = "python3.9"
+
+}
+```
+
 #### [lambda_function.py](k8s/lambda-function/lambda_function.py)
 
 First, let's understand what our lambda function is doing. In a simple and summarized way, the function makes a request for a web link (in the case of github from my [repository](https://github.com/camposvinicius/data/blob/main/AdventureWorks.zip) that I made available), for a zipped file, then uploads it to a bucket and then unzips the files in the bucket itself.
@@ -961,7 +1025,7 @@ type: Opaque
 data:
   username: your-username-with-base64 # you can use => echo -n "username" | base64
 stringData:
-  password: your-token
+  password: your-github-token
 
 ```
 
@@ -3369,17 +3433,27 @@ Now let's understand what the DAG script is doing.
 In parts the script will do:
 
 - 1 - Create 3 Buckets **(LANDING_BUCKET_ZONE, PROCESSING_BUCKET_ZONE, CURATED_BUCKET_ZONE)**.
+
 - 2 - Trigger the lambda function.
+
 - 3 - Checks that the csvs that the lambda function unpacked are in the bucket.
+
 - 4 - Create an EMR cluster (1 Master On Demand, 1 Core On Demand and 1 Task Spot).
+
 - 5 - EMR cluster creation monitoring sensor that only succeeds when it returns 'WAITING' status.
+
 - 6 - For loop in first pyspark script `csv-to-parquet.py`.
+
 - 7 - For loop monitoring of spark jobs that keep nudging the jobs and only mark success when the job marks 'COMPLETED'.
+
 - 8 - Run the second `transformation.py` script.
+
 - 9 - Pyspark job success monitoring sensor in second script.
+
 - 10 - IN PARALLEL
 
   - Lists files that have been written to the curated s3 bucket.
+  
   - Create a schema in redshift.
     - Create a table in redshift.
       - Loads data from the curated s3 bucket to redshift.
@@ -3395,9 +3469,14 @@ In parts the script will do:
   - Simple query with function with python operator to check table existence and print.
 
 - 11 - TASK DUMMY -> LITTLE STOP
+
 - 12 - Delete the Buckets **(LANDING_BUCKET_ZONE, PROCESSING_BUCKET_ZONE, CURATED_BUCKET_ZONE)**.
+
 - 13 - With BashOperator, through a post request in my workflow of manual destruction of my repository, I destroy all the resources that were built.
+
 - 14 - Python sensor written in a function that keeps nudging and monitoring the successful execution of the workflow and the actual destruction of resources.
+
+- 15 - PLUS: In the DAG's default_args, if it fails, the `on_failure_callback` function will inform the emails included in the SNS topic.
 
 [DAG](k8s/dags/etl_aws_vini.py)
 

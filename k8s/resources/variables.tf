@@ -7,10 +7,10 @@ variable "cluster_name" {
 }
 
 variable "redshift_user" {
-  default = "vini"
+  default = "your-redshift-user"
 }
 variable "redshift_pass" {
-  default = "Etl-vini-aws-1"
+  default = "your-redshift-password"
 }
 
 variable "redshift_db" {
@@ -18,13 +18,13 @@ variable "redshift_db" {
 }
 
 variable "postgres_user" {
-  default = "vinietlaws"
+  default = "your-postgres-user"
 }
 
 variable "postgres_pass" {
-  default = "vinietlaws"
+  default = "your-postgres-password"
 }
 
 variable "email" {
-  default = "test.vini.etl.aws@gmail.com"
+  default = "your-email"
 }

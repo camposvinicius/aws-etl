@@ -6,6 +6,6 @@ metadata:
   labels:
     argocd.argoproj.io/secret-type: repository
 stringData:
-  url: https://github.com/camposvinicius/aws-etl.git
-  password: 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
-  username: camposvinicius
+  url: https://github.com/your/private-repo.git
+  password: your-github-token
+  username: your-username
