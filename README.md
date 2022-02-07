@@ -259,7 +259,7 @@ data "aws_eks_cluster_auth" "cluster" {
 #### [emr-codes-bucket.tf](k8s/resources/emr-codes-bucket.tf)
 #### [codes](k8s/codes)
 
-Basically here is creating a bucket that will store all our code and other dependency files of our spark job as jars and zipped pyfiles, and after this creation, it will upload these files.
+Basically here is creating a bucket that will store all our code and other dependency files of our spark job as pyfiles, and after this creation, it will upload these files.
 
 ```terraform
 resource "aws_s3_bucket" "emr_codes_bucket" {
